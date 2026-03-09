@@ -12,9 +12,9 @@
   - [Charge Fees Based on Direction](#2-charge-fees-based-on-direction)
   - [Detect Cross-Chain Depegs Before They Arrive](#3-detect-cross-chain-depegs-before-they-arrive)
 - [Simulations: Real Depeg Events](#simulations-real-depeg-events)
-  - [UST/LUNA Collapse (No Recovery)](#1-ustluna-collapse--may-2022--no-recovery)
-  - [SVB / USDC Depeg (Recovery in 48h)](#2-svb--usdc-depeg--march-2023--recovery-in-48h)
-  - [USDT Whale Attack (Quick Recovery)](#3-usdt-whale-attack--june-2023--quick-recovery)
+  - [SVB / USDC Depeg (Recovery in 48h)](#1-svb--usdc-depeg--march-2023--recovery-in-48h)
+  - [USDT Whale Attack (Quick Recovery)](#2-usdt-whale-attack--june-2023--quick-recovery)
+  - [UST/LUNA Collapse (No Recovery)](#3-ustluna-collapse--may-2022--no-recovery)
 - [Theoretical Foundation](#theoretical-foundation)
 - [Project Structure](#project-structure)
 - [Setup Guide](#setup-guide)
@@ -193,31 +193,7 @@ Each simulation uses a \$20M stablecoin pool (10M/10M) and models the actual sel
 
 ---
 
-### 1. UST/LUNA Collapse | May 2022 | No Recovery
-
-UST lost its algorithmic peg and collapsed to \$0. Over \$50B in market cap was destroyed. LPs in UST pairs suffered total loss as positions converted entirely to a worthless token.
-
-**Modeled scenario:** \$18M of UST dumped into the pool over 72 hours. Token never recovers. Final price: \$0.
-
-| Wave          | Sell Volume   | Pool State       | Ratio | Standard Fee | DepegShield Fee          |
-| ------------- | ------------- | ---------------- | ----- | ------------ | ------------------------ |
-| Initial panic | \$3M UST sold | 13M / 7M (65/35) | 1.86  | 1bp = \$300  | ~30bp = \$9,000          |
-| Cascade       | \$5M UST sold | 18M / 2M (90/10) | 9.00  | 1bp = \$500  | ~200bp = \$100,000       |
-| Final drain   | \$5M UST sold | ~20M / ~0        | max   | 1bp = \$500  | ~200bp (cap) = \$100,000 |
-| Trickle       | \$5M UST sold | 20M / 0          | max   | 1bp = \$500  | ~200bp (cap) = \$100,000 |
-
-|                                | Standard Pool    | DepegShield Pool |
-| ------------------------------ | ---------------- | ---------------- |
-| Crisis fees earned             | \$1,800          | \$309,000        |
-| LP position value (UST at \$0) | \$0              | \$0              |
-| **Net LP outcome**             | **-\$9,998,200** | **-\$9,691,000** |
-| Fees as % of loss              | 0.02%            | 3.1%             |
-
-DepegShield cannot save LPs from a total collapse. But it extracts \$309,000 in fees from the panic sellers who drained the pool. In a standard pool, LPs earned \$1,800 for absorbing \$18M of a token going to zero.
-
----
-
-### 2. SVB / USDC Depeg | March 2023 | Recovery in 48h
+### 1. SVB / USDC Depeg | March 2023 | Recovery in 48h
 
 Circle disclosed \$3.3B in reserves at the failed Silicon Valley Bank. USDC dropped to \$0.87. On Aave, 3,400 positions were liquidated (\$24M, 86% in USDC). The peg recovered in 48 hours after the FDIC backstopped depositors.
 
@@ -243,7 +219,7 @@ Zero-fee rebalancing also means recovery flow arrives faster since arbitrageurs 
 
 ---
 
-### 3. USDT Whale Attack | June 2023 | Quick Recovery
+### 2. USDT Whale Attack | June 2023 | Quick Recovery
 
 A single entity dumped 31.5M USDT across DEX pools in a coordinated sell. USDT depegged to \$0.997. Over \$120M in sell pressure was absorbed at flat fees. Recovery within hours.
 
@@ -261,7 +237,31 @@ A single entity dumped 31.5M USDT across DEX pools in a coordinated sell. USDT d
 | **Net LP outcome**              | **+\$1,400**   | **+\$120,000**   |
 | **Cost to attacker**            | **\$800**      | **\$120,000**    |
 
-This is where DepegShield doubles as an anti-manipulation mechanism. In a standard pool, a whale can tilt \$20M of liquidity for \$800 in fees. Under DepegShield, the same attack costs \$120,000. The exponential fee curve makes pool manipulation at scale economically prohibitive.
+This is where DepegShield doubles as an anti-manipulation mechanism. In a standard pool, a whale can tilt \$20M of liquidity for \$800 in fees. Under DepegShield, the same attack costs \$120,000. The fee curve makes pool manipulation at scale economically prohibitive.
+
+---
+
+### 3. UST/LUNA Collapse | May 2022 | No Recovery
+
+UST lost its algorithmic peg and collapsed to \$0. Over \$50B in market cap was destroyed. LPs in UST pairs suffered total loss as positions converted entirely to a worthless token.
+
+**Modeled scenario:** \$18M of UST dumped into the pool over 72 hours. Token never recovers. Final price: \$0.
+
+| Wave          | Sell Volume   | Pool State       | Ratio | Standard Fee | DepegShield Fee          |
+| ------------- | ------------- | ---------------- | ----- | ------------ | ------------------------ |
+| Initial panic | \$3M UST sold | 13M / 7M (65/35) | 1.86  | 1bp = \$300  | ~30bp = \$9,000          |
+| Cascade       | \$5M UST sold | 18M / 2M (90/10) | 9.00  | 1bp = \$500  | ~200bp = \$100,000       |
+| Final drain   | \$5M UST sold | ~20M / ~0        | max   | 1bp = \$500  | ~200bp (cap) = \$100,000 |
+| Trickle       | \$5M UST sold | 20M / 0          | max   | 1bp = \$500  | ~200bp (cap) = \$100,000 |
+
+|                                | Standard Pool    | DepegShield Pool |
+| ------------------------------ | ---------------- | ---------------- |
+| Crisis fees earned             | \$1,800          | \$309,000        |
+| LP position value (UST at \$0) | \$0              | \$0              |
+| **Net LP outcome**             | **-\$9,998,200** | **-\$9,691,000** |
+| Fees as % of loss              | 0.02%            | 3.1%             |
+
+DepegShield cannot save LPs from a total collapse. But it extracts \$309,000 in fees from the panic sellers who drained the pool. In a standard pool, LPs earned \$1,800 for absorbing \$18M of a token going to zero.
 
 ---
 
