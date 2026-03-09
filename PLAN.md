@@ -27,7 +27,8 @@
 **What it does:**
 - Computes imbalance ratio from virtual reserves
 - If ratio > 12200 (1.22x, ~55/45 split) AND swap worsens imbalance → 50bp fee
-- Otherwise → 1bp base fee
+- If ratio > 12200 AND swap rebalances → 0bp fee (incentivize rebalancing)
+- If ratio ≤ 12200 (balanced) → 1bp base fee regardless of direction
 - View functions: `getImbalanceRatio(key)`, `getVirtualReserves(key)`
 - Event: `SwapFeeApplied(poolId, imbalanceRatio, worsensImbalance, feeApplied)`
 
@@ -59,7 +60,7 @@ Zone 3 — Circuit Breaker (ratio > 15000, i.e. > 60/40):
 **Modify: `src/DepegShieldHook.sol`**
 - Replace the if/else fee logic with `FeeCurve.calculateFee(imbalanceRatio)`
 - Add configurable parameters struct (k1, k2, n, zone boundaries) set at pool init
-- Keep directional logic unchanged (curve fee for worsening, BASE_FEE for rebalancing)
+- Keep directional logic unchanged (curve fee for worsening, 0bp for rebalancing)
 
 **New file: `test/FeeCurve.t.sol`**
 - Unit tests for fee values at known ratios (boundary conditions, overflow, max cap)
@@ -93,7 +94,7 @@ Zone 3 — Circuit Breaker (ratio > 15000, i.e. > 60/40):
 2. **Fee Curve Visualization**
    - Plot the 3-zone fee curve (ratio on x-axis, fee in bps on y-axis)
    - Animated dot showing current pool position on the curve
-   - Two lines: "worsening swap fee" (the curve) and "rebalancing swap fee" (flat 1bp)
+   - Two lines: "worsening swap fee" (the curve) and "rebalancing swap fee" (flat 0bp)
 
 3. **Depeg Simulation Replay**
    - Pre-computed scenario data (from DepegScenario.t.sol output)
