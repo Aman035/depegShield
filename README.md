@@ -119,40 +119,43 @@ The fee escalates across three zones as the pool gets more stressed:
   Fee
   (bps)
     │
-200 ┤                                                        ●
+265 ┤                                                        ● (80/20)
     │                                                      ╱
     │                                                    ╱
-150 ┤                                                  ╱
+200 ┤                                                  ╱
     │                                                ╱
     │                                              ╱
-100 ┤                                            ╱
+150 ┤                                            ╱
     │                                          ╱
-    │                                       ╱╱
- 50 ┤                                    ╱╱
-    │                                ╱╱╱
-    │                           ╱╱╱╱
- 15 ┤                     ·····
-    │                ····
-  5 ┤           ····
-    │       ···
-  1 ┤───────
+    │                                       ╱
+100 ┤                                    ╱  (70/30 = 98bp)
+    │                                 ╱
+    │                              ╱
+ 50 ┤                           ╱  (65/35 = 50bp)
+    │                        ╱
+    │                     ╱
+ 15 ┤                  ·····  (60/40)
+    │             ····
+  5 ┤        ····
+    │    ···
+  1 ┤────
     │
-  0 ┼───────┬──────────────┬─────────────────┬──────────────────
+  0 ┼────────┬──────────────┬─────────────────┬──────────────────
           55/45          60/40              70/30             80/20
             │              │                  │
             │   WARNING    │  CIRCUIT BREAKER │
-   SAFE     │  quadratic   │   exponential    │
-   1bp      │   5-15bp     │    50-200bp+     │
+   SAFE     │  quadratic   │     linear       │
+   1bp      │   1-15bp     │    50-265bp+     │
 ```
 
 ```
 fee(r) =
-  baseFee                                if r ≤ 1.22    (safe zone)
-  baseFee + k₁ × (r - 1.22)²            if 1.22 < r ≤ 1.5  (warning zone)
-  baseFee + k₂ × (r - 1.22)ⁿ            if r > 1.5    (circuit breaker)
+  baseFee                                      if r ≤ 1.22    (safe zone)
+  baseFee + (r - 1.22)² / divisor              if 1.22 < r ≤ 1.5  (warning zone)
+  warningEndFee + (r - 1.5)                    if r > 1.5    (circuit breaker)
 ```
 
-All parameters (`k₁`, `k₂`, `n`, zone boundaries, max cap) are configurable per pool.
+Capped at 50% (safety maximum). The curve is continuous at both zone boundaries: the fee value and rate of increase match at each transition.
 
 ### 3. Detect Cross-Chain Depegs Before They Arrive
 
