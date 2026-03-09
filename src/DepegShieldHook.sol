@@ -14,26 +14,16 @@ import {LPFeeLibrary} from "@uniswap/v4-core/src/libraries/LPFeeLibrary.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {FullMath} from "@uniswap/v4-core/src/libraries/FullMath.sol";
 
+import {FeeCurve} from "./FeeCurve.sol";
+
 /// @title DepegShield Hook
 /// @notice Adaptive fee circuit breaker for stablecoin pools on Uniswap v4.
 ///         Charges dynamic, directional fees based on pool imbalance ratio.
-///         Swaps that worsen imbalance pay escalated fees; swaps that improve it pay base fee.
+///         Swaps that worsen imbalance pay escalated fees; swaps that improve it pay zero fee.
 contract DepegShieldHook is BaseHook {
     using PoolIdLibrary for PoolKey;
     using StateLibrary for IPoolManager;
 
-    // --- Fee constants (in hundredths of a bip) ---
-    // 1 bip = 100 units in v4's fee system
-    // So 1bp = 100, 50bp = 5000
-    uint24 public constant BASE_FEE = 100; // 1bp
-    uint24 public constant ELEVATED_FEE = 5000; // 50bp
-    uint24 public constant MAX_FEE = 500000; // 50% cap (safety)
-
-    // --- Imbalance threshold ---
-    // Ratio is stored as fixed-point with 4 decimal places (1.0 = 10000)
-    // imbalanceRatio = max(reserve0, reserve1) / min(reserve0, reserve1)
-    // Threshold: 1.22 (55/45 split) = 12200 in our fixed-point
-    uint256 public constant IMBALANCE_THRESHOLD = 12200; // 1.22 * 10000
     uint256 public constant RATIO_PRECISION = 10000;
 
     // --- Events ---
@@ -76,7 +66,7 @@ contract DepegShieldHook is BaseHook {
 
         // If no liquidity, return base fee
         if (liquidity == 0) {
-            return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, BASE_FEE | LPFeeLibrary.OVERRIDE_FEE_FLAG);
+            return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, FeeCurve.BASE_FEE | LPFeeLibrary.OVERRIDE_FEE_FLAG);
         }
 
         // 2. Compute virtual reserves from sqrtPriceX96 and liquidity
@@ -93,22 +83,14 @@ contract DepegShieldHook is BaseHook {
         // If reserve1 > reserve0 and we're selling token1 (zeroForOne=false), that worsens imbalance
         bool worsensImbalance = _doesSwapWorsenImbalance(reserve0, reserve1, params.zeroForOne);
 
-        // 5. Compute fee
+        // 5. Compute fee using 3-zone curve
         uint24 fee;
-        if (!worsensImbalance && imbalanceRatio > IMBALANCE_THRESHOLD) {
+        if (!worsensImbalance && imbalanceRatio > FeeCurve.ZONE1_UPPER) {
             // Pool is imbalanced AND swap helps rebalance → zero fee to incentivize rebalancing
             fee = 0;
-        } else if (imbalanceRatio <= IMBALANCE_THRESHOLD) {
-            // Pool is balanced → base fee regardless of direction
-            fee = BASE_FEE;
         } else {
-            // Pool is imbalanced AND swap makes it worse → elevated fee
-            fee = ELEVATED_FEE;
-        }
-
-        // Cap the fee
-        if (fee > MAX_FEE) {
-            fee = MAX_FEE;
+            // Curve handles all other cases: balanced → BASE_FEE, worsening → escalating fee
+            fee = FeeCurve.calculateFee(imbalanceRatio);
         }
 
         return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, fee | LPFeeLibrary.OVERRIDE_FEE_FLAG);
@@ -129,12 +111,10 @@ contract DepegShieldHook is BaseHook {
             bool worsensImbalance = _doesSwapWorsenImbalance(reserve0, reserve1, params.zeroForOne);
 
             uint24 feeApplied;
-            if (imbalanceRatio > IMBALANCE_THRESHOLD && worsensImbalance) {
-                feeApplied = ELEVATED_FEE;
-            } else if (imbalanceRatio > IMBALANCE_THRESHOLD && !worsensImbalance) {
+            if (!worsensImbalance && imbalanceRatio > FeeCurve.ZONE1_UPPER) {
                 feeApplied = 0;
             } else {
-                feeApplied = BASE_FEE;
+                feeApplied = FeeCurve.calculateFee(imbalanceRatio);
             }
 
             emit SwapFeeApplied(key.toId(), imbalanceRatio, worsensImbalance, feeApplied);
@@ -215,5 +195,10 @@ contract DepegShieldHook is BaseHook {
         if (liquidity == 0) return (0, 0);
 
         return _getVirtualReserves(sqrtPriceX96, liquidity);
+    }
+
+    /// @notice Get the fee that would be charged for a given imbalance ratio (for frontend curve plotting)
+    function getFeeForRatio(uint256 ratio) external pure returns (uint24) {
+        return FeeCurve.calculateFee(ratio);
     }
 }
