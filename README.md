@@ -40,8 +40,8 @@ As the pool price drops tick by tick during a depeg, the AMM mechanically sells 
 A flat 1bp fee applies regardless of market conditions:
 
 ```
-  Normal \$5M swap in a balanced pool:     1bp  -->  \$500 fee to LPs
-  Panic  \$5M swap during active depeg:    1bp  -->  \$500 fee to LPs
+  Normal $5M swap in a balanced pool:     1bp  -->  $500 fee to LPs
+  Panic $5M swap during active depeg:    1bp  -->  $500 fee to LPs
                                                      ↑
                                             Same fee. Wildly different risk.
 ```
