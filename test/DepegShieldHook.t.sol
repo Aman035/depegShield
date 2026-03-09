@@ -20,6 +20,7 @@ import {Constants} from "@uniswap/v4-core/test/utils/Constants.sol";
 import {EasyPosm} from "./utils/libraries/EasyPosm.sol";
 
 import {DepegShieldHook} from "../src/DepegShieldHook.sol";
+import {FeeCurve} from "../src/FeeCurve.sol";
 import {BaseTest} from "./utils/BaseTest.sol";
 
 contract DepegShieldHookTest is BaseTest {
@@ -91,7 +92,7 @@ contract DepegShieldHookTest is BaseTest {
         // Pool starts at 1:1 price → balanced → imbalance ratio = 1.0
         uint256 ratio = hook.getImbalanceRatio(poolKey);
         console.log("Initial imbalance ratio:", ratio);
-        assertLe(ratio, hook.IMBALANCE_THRESHOLD(), "Pool should start balanced");
+        assertLe(ratio, FeeCurve.ZONE1_UPPER, "Pool should start balanced");
 
         // Swap token0 → token1 (small amount, won't cause significant imbalance)
         uint256 amountIn = 0.01e18;
@@ -108,7 +109,7 @@ contract DepegShieldHookTest is BaseTest {
         // Pool should still be balanced after tiny swap
         ratio = hook.getImbalanceRatio(poolKey);
         console.log("Ratio after small swap:", ratio);
-        assertLe(ratio, hook.IMBALANCE_THRESHOLD(), "Pool should remain balanced after small swap");
+        assertLe(ratio, FeeCurve.ZONE1_UPPER, "Pool should remain balanced after small swap");
     }
 
     // ==========================================
@@ -131,7 +132,7 @@ contract DepegShieldHookTest is BaseTest {
         // Check that pool is now imbalanced
         uint256 ratio = hook.getImbalanceRatio(poolKey);
         console.log("Ratio after large swap:", ratio);
-        assertGt(ratio, hook.IMBALANCE_THRESHOLD(), "Pool should be imbalanced after large swap");
+        assertGt(ratio, FeeCurve.ZONE1_UPPER, "Pool should be imbalanced after large swap");
 
         // Now do another swap in the SAME direction (worsening)
         // This should pay elevated fee
@@ -176,7 +177,7 @@ contract DepegShieldHookTest is BaseTest {
 
         uint256 ratio = hook.getImbalanceRatio(poolKey);
         console.log("Ratio after imbalancing:", ratio);
-        assertGt(ratio, hook.IMBALANCE_THRESHOLD());
+        assertGt(ratio, FeeCurve.ZONE1_UPPER);
 
         // Now swap in the OPPOSITE direction (rebalancing: sell token1 for token0)
         // This should get base fee
@@ -213,7 +214,7 @@ contract DepegShieldHookTest is BaseTest {
 
         uint256 ratio = hook.getImbalanceRatio(poolKey);
         console.log("Imbalance ratio:", ratio);
-        assertGt(ratio, hook.IMBALANCE_THRESHOLD());
+        assertGt(ratio, FeeCurve.ZONE1_UPPER);
 
         // Snapshot state, do worsening swap
         uint256 snapshot = vm.snapshotState();
@@ -302,7 +303,7 @@ contract DepegShieldHookTest is BaseTest {
             prevRatio = newRatio;
         }
 
-        assertGt(prevRatio, hook.IMBALANCE_THRESHOLD(), "Should be imbalanced after multiple swaps");
+        assertGt(prevRatio, FeeCurve.ZONE1_UPPER, "Should be imbalanced after multiple swaps");
     }
 
     // --- Helpers ---
