@@ -1,7 +1,7 @@
 # DepegShield — Implementation Spec
 
 > This file is the source of truth for implementation. Each phase builds on the last.
-> Status: Phase 1 ✅ | Phase 2 🔲 | Phase 3 🔲 | Phase 4 🔲
+> Status: Phase 1 ✅ | Phase 2 ✅ | Phase 3 🔲 | Phase 4 🔲
 
 ---
 
@@ -36,7 +36,7 @@
 
 ---
 
-## Phase 2: Dynamic Fee Curve + Depeg Simulation 🔲
+## Phase 2: Dynamic Fee Curve + Depeg Simulation ✅
 
 **Goal:** Replace the binary BASE/ELEVATED fee with a continuous 3-zone curve.
 
