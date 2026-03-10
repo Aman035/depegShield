@@ -77,32 +77,73 @@ Zone 3 — Circuit Breaker (ratio > 15000, i.e. > 60/40):
 
 ---
 
-## Phase 3: Frontend Dashboard 🔲
+## Phase 3: Frontend 🔲
 
-**Stack:** Next.js + React + ethers.js/viem + Tailwind
+**Stack:** Next.js 14+ (App Router), React, Tailwind CSS, viem + wagmi, Recharts, RainbowKit
 
-**Single page with 3 sections:**
+**Location:** `frontend/` subdirectory of the Foundry project
 
-1. **Pool Health Gauge**
-   - Read `getImbalanceRatio()` from deployed hook
-   - Display as a gauge/meter with zone coloring:
-     - Green (ratio < 1.22): "Safe"
-     - Yellow (1.22–1.5): "Warning"
-     - Red (> 1.5): "Circuit Breaker"
-   - Show current reserves and ratio numerically
+**Chains:** Unichain Sepolia, Sepolia, Base Sepolia
 
-2. **Fee Curve Visualization**
-   - Plot the 3-zone fee curve (ratio on x-axis, fee in bps on y-axis)
-   - Animated dot showing current pool position on the curve
-   - Two lines: "worsening swap fee" (the curve) and "rebalancing swap fee" (flat 0bp)
+### Page 1: Landing Page (`/`)
 
-3. **Depeg Simulation Replay**
-   - Pre-computed scenario data (from DepegScenario.t.sol output)
-   - Play/pause/step controls
-   - Animates: gauge changing, dot moving along curve, fee counters incrementing
-   - Side-by-side: "LP earnings with DepegShield" vs "LP earnings without"
+1. **Hero Section**
+   - Tagline + one-liner explaining DepegShield
+   - CTA button to Explore page
 
-**Contract reads:** `getImbalanceRatio(key)`, `getVirtualReserves(key)` — these are view functions already on the hook.
+2. **Problem / Solution**
+   - Condensed version of README content
+   - Why flat-fee pools fail during depegs
+
+3. **Fee Curve Visualization** (interactive)
+   - 3-zone fee curve chart (ratio on x-axis, fee in bps on y-axis)
+   - Zone backgrounds color-coded (green/yellow/red)
+   - Hover to see exact fee at any ratio
+   - Two lines: "Worsening swap fee" (curve) vs "Rebalancing fee" (0bp)
+   - Client-side math using FeeCurve constants (no contract call needed)
+
+4. **Simulation Replay** (the demo centerpiece)
+   - Dropdown: SVB/USDC Recovery, USDT Whale Attack, UST/LUNA Collapse
+   - Play/pause/step controls to walk through each wave
+   - Animates: gauge changes, dot moves on curve, fee counters increment
+   - Side-by-side: "DepegShield LP fees" vs "Flat-fee LP fees"
+   - Pre-computed data hardcoded from forge test output
+
+5. **How It Works**
+   - Brief 3-step technical flow: measure imbalance -> directional fee -> protect LPs
+
+### Page 2: Explore Page (`/explore`)
+
+1. **Pool Input**
+   - Pool address input field
+   - Chain selector dropdown (Unichain Sepolia, Sepolia, Base Sepolia)
+   - Wallet connection via RainbowKit
+
+2. **Pool Health Gauge**
+   - Large gauge/meter: Safe (green) / Warning (yellow) / Circuit Breaker (red)
+   - Reads `getImbalanceRatio(key)` on-chain
+   - Shows reserves, ratio, pool split (e.g., "54/46") numerically
+
+3. **Fee Curve with Live Position**
+   - Same fee curve chart as landing page
+   - Animated dot showing where this pool currently sits on the curve
+   - Current fee displayed for worsening vs rebalancing direction
+
+4. **Swap Button**
+   - Links to Uniswap frontend with pool pre-selected
+   - Enables live demo: swap -> see gauge/curve update in real time
+
+**Contract reads:** `getImbalanceRatio(key)`, `getVirtualReserves(key)`, `getFeeForRatio(ratio)`
+
+**Fee curve constants (replicated client-side):**
+```
+BASE_FEE = 100, MAX_FEE = 500_000
+ZONE1_UPPER = 12_200, ZONE2_UPPER = 15_000
+ZONE2_DIVISOR = 5_600, ZONE2_END_FEE = 1_500
+Zone 1: fee = 100
+Zone 2: fee = 100 + (ratio - 12200)^2 / 5600
+Zone 3: fee = 1500 + (ratio - 15000), capped at 500000
+```
 
 ---
 
