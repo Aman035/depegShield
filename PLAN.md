@@ -21,8 +21,8 @@
 ## Phase 1: Directional Fee Hook ✅
 
 **Files created:**
-- `src/DepegShieldHook.sol` — hook with `_beforeSwap` (fee logic) + `_afterSwap` (events)
-- `test/DepegShieldHook.t.sol` — 6 tests, all passing
+- `contracts/src/DepegShieldHook.sol` — hook with `_beforeSwap` (fee logic) + `_afterSwap` (events)
+- `contracts/test/DepegShieldHook.t.sol` — 6 tests, all passing
 
 **What it does:**
 - Computes imbalance ratio from virtual reserves
@@ -40,7 +40,7 @@
 
 **Goal:** Replace the binary BASE/ELEVATED fee with a continuous 3-zone curve.
 
-**New file: `src/FeeCurve.sol`** (pure library)
+**New file: `contracts/src/FeeCurve.sol`** (pure library)
 ```
 function calculateFee(uint256 ratio) returns (uint24 fee)
 
@@ -57,16 +57,16 @@ Zone 3 — Circuit Breaker (ratio > 15000, i.e. > 60/40):
   Cap at MAX_FEE
 ```
 
-**Modify: `src/DepegShieldHook.sol`**
+**Modify: `contracts/src/DepegShieldHook.sol`**
 - Replace the if/else fee logic with `FeeCurve.calculateFee(imbalanceRatio)`
 - Add configurable parameters struct (k1, k2, n, zone boundaries) set at pool init
 - Keep directional logic unchanged (curve fee for worsening, 0bp for rebalancing)
 
-**New file: `test/FeeCurve.t.sol`**
+**New file: `contracts/test/FeeCurve.t.sol`**
 - Unit tests for fee values at known ratios (boundary conditions, overflow, max cap)
 - Fuzz test: fee should be monotonically increasing with ratio
 
-**New file: `test/DepegScenario.t.sol`**
+**New file: `contracts/test/DepegScenario.t.sol`**
 - Simulate March 2023 USDC depeg: sequence of sells pushing pool from 50/50 → 80/20
 - Then recovery: buys pushing back to 50/50
 - Track cumulative fees earned by LPs with DepegShield
@@ -149,13 +149,13 @@ Zone 3: fee = 1500 + (ratio - 15000), capped at 500000
 
 ## Phase 4: Reactive Network Cross-Chain Integration 🔲
 
-**New file: `src/AlertReceiver.sol`** (deployed on Unichain)
+**New file: `contracts/src/AlertReceiver.sol`** (deployed on Unichain)
 - `setAlert(address token, uint8 severity)` — callable only by Reactive Network
 - `clearAlert(address token)` — callable by Reactive Network or after TTL expiry
 - Stores: `mapping(address => Alert)` where Alert = {severity, timestamp, ttl}
 - `getAlertSeverity(address token) → uint8` — view for hook to read
 
-**Modify: `src/DepegShieldHook.sol`**
+**Modify: `contracts/src/DepegShieldHook.sol`**
 - In `_beforeSwap`: if `alertReceiver.getAlertSeverity(token) > 0`, multiply fee curve output by severity factor
 - This means a locally-balanced pool still charges elevated fees if cross-chain depeg detected
 - Severity levels: 1 = 1.5x multiplier, 2 = 2x, 3 = 3x

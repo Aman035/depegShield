@@ -1,0 +1,15 @@
+# Compiler files
+cache/
+out/
+
+# Broadcast logs
+!/broadcast
+broadcast/*/31337/
+broadcast/*/5/
+broadcast/**/dry-run/
+
+# Docs
+docs/
+
+# Dotenv
+.env

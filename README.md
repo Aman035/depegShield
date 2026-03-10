@@ -301,16 +301,22 @@ Zhu (arXiv:2408.07227, 2024) decomposes stablecoin run risk into two components:
 
 ```
 depegShield/
-├── src/
-│   └── DepegShieldHook.sol       # Core hook: beforeSwap fee logic, afterSwap events
-│                                 #   _getVirtualReserves(), _computeImbalanceRatio()
-│                                 #   _doesSwapWorsenImbalance(), view functions
+├── contracts/                    # Foundry project
+│   ├── src/
+│   │   ├── DepegShieldHook.sol   # Core hook: beforeSwap fee logic, afterSwap events
+│   │   └── FeeCurve.sol          # 3-zone fee curve library
+│   ├── test/
+│   │   ├── DepegShieldHook.t.sol # Hook behavior tests
+│   │   ├── FeeCurve.t.sol        # Fee curve unit + fuzz tests
+│   │   └── DepegScenario.t.sol   # Depeg simulation scenarios
+│   └── script/
+│       └── 00_DeployHook.s.sol   # CREATE2 deployment
 │
-├── test/
-│   └── DepegShieldHook.t.sol     # Hook behavior tests (fee correctness, directionality)
-│
-├── script/
-    └── 00_DeployHook.s.sol       # CREATE2 deployment with flag-encoded address mining
+├── frontend/                     # Next.js app
+│   └── src/
+│       ├── app/                  # Landing page + Explore page
+│       ├── components/           # FeeCurveChart, SimulationReplay, PoolHealthGauge
+│       └── lib/                  # Fee curve math, simulation data
 ```
 
 ---
@@ -320,6 +326,7 @@ depegShield/
 ### Prerequisites
 
 - [Foundry](https://book.getfoundry.sh/getting-started/installation) (run `foundryup` to install or update)
+- [Node.js](https://nodejs.org/) 20+
 - Git
 
 ### Installation
@@ -327,23 +334,28 @@ depegShield/
 ```bash
 git clone https://github.com/aman035/depegShield.git
 cd depegShield
-forge install
+git submodule update --init --recursive
 ```
 
-### Build
+### Contracts
 
 ```bash
+cd contracts
 forge build
+forge test -vv
 ```
 
-### Test
+### Frontend
 
 ```bash
-forge test -vv
+cd frontend
+npm install
+npm run dev
 ```
 
 ### Deploy
 
 ```bash
+cd contracts
 forge script script/00_DeployHook.s.sol --rpc-url <your-rpc-url> --broadcast
 ```
