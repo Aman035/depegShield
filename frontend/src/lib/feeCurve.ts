@@ -54,9 +54,9 @@ export const ZONE_LABELS = {
 } as const;
 
 export const ZONE_COLORS = {
-  safe: { bg: "#064e3b", text: "#34d399", border: "#059669", glow: "rgba(52, 211, 153, 0.15)" },
-  warning: { bg: "#78350f", text: "#fbbf24", border: "#d97706", glow: "rgba(251, 191, 36, 0.15)" },
-  critical: { bg: "#7f1d1d", text: "#f87171", border: "#dc2626", glow: "rgba(248, 113, 113, 0.15)" },
+  safe: { text: "#00c853", bg: "#1a3a2a" },
+  warning: { text: "#f5a623", bg: "#3a2e1a" },
+  critical: { text: "#e53935", bg: "#3a1a1a" },
 } as const;
 
 /** Generate fee curve data points for charting */

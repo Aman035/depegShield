@@ -10,150 +10,111 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   ReferenceArea,
-  CartesianGrid,
 } from "recharts";
-import { generateCurveData, ZONE1_UPPER, ZONE2_UPPER, toBps, ratioToSplit } from "@/lib/feeCurve";
+import { generateCurveData, ZONE1_UPPER, ZONE2_UPPER, ratioToSplit } from "@/lib/feeCurve";
 
 interface FeeCurveChartProps {
-  currentRatio?: number; // If provided, shows a marker dot
+  currentRatio?: number;
   height?: number;
 }
 
-export function FeeCurveChart({ currentRatio, height = 360 }: FeeCurveChartProps) {
-  const data = useMemo(() => generateCurveData(50, 10000, 40000), []);
+export function FeeCurveChart({ currentRatio, height = 340 }: FeeCurveChartProps) {
+  const data = useMemo(() => generateCurveData(200, 10000, 35000), []);
 
-  const currentPoint = useMemo(() => {
-    if (!currentRatio) return null;
-    const closest = data.reduce((prev, curr) =>
-      Math.abs(curr.ratio - currentRatio) < Math.abs(prev.ratio - currentRatio)
-        ? curr
-        : prev
-    );
-    return closest;
-  }, [currentRatio, data]);
+  // Custom x-axis ticks: only show key ratios
+  const xTicks = [10000, 15000, 20000, 25000, 30000, 35000];
 
   return (
     <div className="w-full" style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 10, right: 30, left: 10, bottom: 0 }}>
-          <defs>
-            <linearGradient id="feeGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#34d399" stopOpacity={0.3} />
-              <stop offset="50%" stopColor="#fbbf24" stopOpacity={0.15} />
-              <stop offset="100%" stopColor="#f87171" stopOpacity={0.05} />
-            </linearGradient>
-            <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#34d399" />
-              <stop offset="30%" stopColor="#34d399" />
-              <stop offset="50%" stopColor="#fbbf24" />
-              <stop offset="100%" stopColor="#f87171" />
-            </linearGradient>
-          </defs>
-
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="rgba(30, 42, 58, 0.5)"
-            vertical={false}
-          />
-
-          {/* Zone backgrounds */}
+        <AreaChart data={data} margin={{ top: 12, right: 24, left: 4, bottom: 4 }}>
+          {/* Zone background bands */}
           <ReferenceArea
             x1={10000}
             x2={ZONE1_UPPER}
-            fill="#065f46"
-            fillOpacity={0.08}
+            fill="rgba(52, 211, 153, 0.02)"
+            fillOpacity={1}
           />
           <ReferenceArea
             x1={ZONE1_UPPER}
             x2={ZONE2_UPPER}
-            fill="#78350f"
-            fillOpacity={0.08}
+            fill="rgba(245, 166, 35, 0.02)"
+            fillOpacity={1}
           />
           <ReferenceArea
             x1={ZONE2_UPPER}
-            x2={40000}
-            fill="#7f1d1d"
-            fillOpacity={0.08}
+            x2={35000}
+            fill="rgba(229, 57, 53, 0.02)"
+            fillOpacity={1}
           />
 
           {/* Zone boundary lines */}
           <ReferenceLine
             x={ZONE1_UPPER}
-            stroke="#059669"
-            strokeDasharray="4 4"
-            strokeOpacity={0.5}
-            label={{ value: "1.22x", position: "top", fill: "#059669", fontSize: 11 }}
+            stroke="rgba(245, 166, 35, 0.15)"
+            strokeDasharray="6 4"
           />
           <ReferenceLine
             x={ZONE2_UPPER}
-            stroke="#d97706"
-            strokeDasharray="4 4"
-            strokeOpacity={0.5}
-            label={{ value: "1.50x", position: "top", fill: "#d97706", fontSize: 11 }}
+            stroke="rgba(229, 57, 53, 0.15)"
+            strokeDasharray="6 4"
           />
 
-          {/* Current position marker */}
+          {/* Current position */}
           {currentRatio && (
-            <ReferenceLine
-              x={currentRatio}
-              stroke="#60a5fa"
-              strokeWidth={2}
-              strokeOpacity={0.8}
-            />
+            <ReferenceLine x={currentRatio} stroke="var(--green)" strokeWidth={1.5} />
           )}
 
           <XAxis
             dataKey="ratio"
+            ticks={xTicks}
             tickFormatter={(v: number) => (v / 10000).toFixed(1) + "x"}
-            stroke="#4a5a72"
-            tick={{ fill: "#4a5a72", fontSize: 11 }}
-            axisLine={{ stroke: "#1e2a3a" }}
-            tickLine={{ stroke: "#1e2a3a" }}
+            stroke="transparent"
+            tick={{ fill: "var(--text-dim)", fontSize: 11, fontFamily: "var(--font-display)" }}
+            tickLine={false}
+            axisLine={{ stroke: "var(--border)" }}
+            interval={0}
+            domain={[10000, 35000]}
+            type="number"
           />
           <YAxis
             tickFormatter={(v: number) => v + "bp"}
-            stroke="#4a5a72"
-            tick={{ fill: "#4a5a72", fontSize: 11 }}
-            axisLine={{ stroke: "#1e2a3a" }}
-            tickLine={{ stroke: "#1e2a3a" }}
-            width={55}
+            stroke="transparent"
+            tick={{ fill: "var(--text-dim)", fontSize: 11, fontFamily: "var(--font-display)" }}
+            tickLine={false}
+            axisLine={false}
+            width={52}
+            domain={[0, "auto"]}
           />
 
-          <Tooltip content={<CustomTooltip currentRatio={currentRatio} />} />
+          <Tooltip content={<CurveTooltip />} cursor={{ stroke: "rgba(255,255,255,0.08)" }} />
+
+          <defs>
+            <linearGradient id="feeGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--green)" stopOpacity={0.2} />
+              <stop offset="100%" stopColor="var(--green)" stopOpacity={0} />
+            </linearGradient>
+          </defs>
 
           <Area
             type="monotone"
             dataKey="feeBps"
-            stroke="url(#lineGradient)"
+            stroke="var(--green)"
             strokeWidth={2}
             fill="url(#feeGradient)"
             dot={
-              currentPoint
+              currentRatio
                 ? (props: Record<string, unknown>) => {
-                    const { cx, cy, payload } = props as {
-                      cx: number;
-                      cy: number;
-                      payload: { ratio: number };
-                    };
-                    if (
-                      currentPoint &&
-                      Math.abs(payload.ratio - currentPoint.ratio) < 75
-                    ) {
+                    const { cx, cy, payload } = props as { cx: number; cy: number; payload: { ratio: number } };
+                    if (currentRatio && Math.abs(payload.ratio - currentRatio) < 150) {
                       return (
-                        <g key="current-dot">
-                          <circle
-                            cx={cx}
-                            cy={cy}
-                            r={8}
-                            fill="#60a5fa"
-                            fillOpacity={0.2}
-                            className="pulse-dot"
-                          />
-                          <circle cx={cx} cy={cy} r={4} fill="#60a5fa" stroke="#0d1117" strokeWidth={2} />
+                        <g key="current">
+                          <circle cx={cx} cy={cy} r={8} fill="var(--green)" opacity={0.15} />
+                          <circle cx={cx} cy={cy} r={4} fill="var(--green)" stroke="var(--bg)" strokeWidth={2} />
                         </g>
                       );
                     }
-                    return <g key={`dot-${payload.ratio}`} />;
+                    return <g key={`d-${payload.ratio}`} />;
                   }
                 : false
             }
@@ -164,41 +125,47 @@ export function FeeCurveChart({ currentRatio, height = 360 }: FeeCurveChartProps
   );
 }
 
-function CustomTooltip({
+function CurveTooltip({
   active,
   payload,
 }: {
   active?: boolean;
   payload?: Array<{ payload: { ratio: number; feeBps: number; zone: string } }>;
-  currentRatio?: number;
 }) {
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
-  const zone = d.zone;
+
   const zoneColor =
-    zone === "safe" ? "#34d399" : zone === "warning" ? "#fbbf24" : "#f87171";
+    d.zone === "safe" ? "var(--green)" : d.zone === "warning" ? "var(--amber)" : "var(--red)";
+  const zoneLabel = d.zone === "safe" ? "Safe" : d.zone === "warning" ? "Warning" : "Circuit Breaker";
 
   return (
-    <div className="glass-card rounded-lg px-4 py-3 shadow-xl">
-      <div className="flex items-center gap-2 mb-1.5">
-        <div
+    <div className="bg-[var(--bg)] border border-[var(--border)] rounded-lg px-4 py-3 shadow-xl">
+      <div className="flex items-center gap-2 mb-2">
+        <span
           className="w-2 h-2 rounded-full"
-          style={{ backgroundColor: zoneColor }}
+          style={{ background: zoneColor }}
         />
-        <span className="font-display text-xs uppercase tracking-wider" style={{ color: zoneColor }}>
-          {zone === "safe" ? "Safe Zone" : zone === "warning" ? "Warning Zone" : "Circuit Breaker"}
+        <span
+          className="text-[11px] font-mono uppercase tracking-widest"
+          style={{ color: zoneColor }}
+        >
+          {zoneLabel}
         </span>
       </div>
-      <div className="space-y-0.5 text-sm">
-        <p className="text-[var(--text-secondary)]">
-          Ratio: <span className="text-[var(--text-primary)] font-display">{(d.ratio / 10000).toFixed(2)}x</span>
-          <span className="text-[var(--text-muted)] ml-1">({ratioToSplit(d.ratio)})</span>
+      <div className="space-y-1">
+        <p className="text-[13px] text-[var(--text-secondary)]">
+          Ratio{" "}
+          <span className="text-[var(--text)] font-mono font-medium">
+            {(d.ratio / 10000).toFixed(2)}x
+          </span>{" "}
+          <span className="text-[var(--text-dim)]">({ratioToSplit(d.ratio)})</span>
         </p>
-        <p className="text-[var(--text-secondary)]">
-          Worsening fee: <span className="text-[var(--text-primary)] font-display">{d.feeBps.toFixed(1)} bps</span>
-        </p>
-        <p className="text-[var(--text-secondary)]">
-          Rebalancing fee: <span className="text-[var(--accent-green)] font-display">0 bps</span>
+        <p className="text-[13px] text-[var(--text-secondary)]">
+          Fee{" "}
+          <span className="text-[var(--text)] font-mono font-medium">
+            {d.feeBps.toFixed(1)} bps
+          </span>
         </p>
       </div>
     </div>

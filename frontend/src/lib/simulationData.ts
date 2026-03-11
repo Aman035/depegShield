@@ -57,14 +57,10 @@ export const scenarios: ScenarioData[] = [
       "A single entity dumped 31.5M USDT across DEX pools. USDT depegged to $0.997. $120M+ in sell pressure absorbed at flat fees. Recovery within hours.",
     outcome: "attack-recovery",
     waves: [
-      { label: "Tranche 1", amount: 100, ratioStart: 10000, ratioEnd: 12099, shieldFeeBps: 1, shieldOut: 90, flatOut: 90 },
-      { label: "Tranche 2", amount: 100, ratioStart: 12099, ratioEnd: 14399, shieldFeeBps: 1, shieldOut: 75, flatOut: 75 },
-      { label: "Tranche 3", amount: 100, ratioStart: 14399, ratioEnd: 16896, shieldFeeBps: 9, shieldOut: 64, flatOut: 64 },
-      { label: "Tranche 4", amount: 100, ratioStart: 16896, ratioEnd: 19587, shieldFeeBps: 33, shieldOut: 54, flatOut: 54 },
-      { label: "Tranche 5", amount: 100, ratioStart: 19587, ratioEnd: 22468, shieldFeeBps: 60, shieldOut: 47, flatOut: 47 },
-      { label: "Tranche 6", amount: 100, ratioStart: 22468, ratioEnd: 25537, shieldFeeBps: 89, shieldOut: 41, flatOut: 41 },
-      { label: "Tranche 7", amount: 100, ratioStart: 25537, ratioEnd: 28792, shieldFeeBps: 120, shieldOut: 36, flatOut: 36 },
-      { label: "Tranche 8", amount: 100, ratioStart: 28792, ratioEnd: 32231, shieldFeeBps: 152, shieldOut: 32, flatOut: 32 },
+      { label: "Tranche 1", amount: 200, ratioStart: 10000, ratioEnd: 14399, shieldFeeBps: 1, shieldOut: 165, flatOut: 165 },
+      { label: "Tranche 2", amount: 200, ratioStart: 14399, ratioEnd: 19587, shieldFeeBps: 21, shieldOut: 118, flatOut: 118 },
+      { label: "Tranche 3", amount: 200, ratioStart: 19587, ratioEnd: 25537, shieldFeeBps: 75, shieldOut: 88, flatOut: 88 },
+      { label: "Tranche 4", amount: 200, ratioStart: 25537, ratioEnd: 32231, shieldFeeBps: 136, shieldOut: 68, flatOut: 68 },
       { label: "Arb recovery", amount: 600, ratioStart: 32231, ratioEnd: 13386, shieldFeeBps: 0, shieldOut: 931, flatOut: 934, isBuy: true },
     ],
     result: {

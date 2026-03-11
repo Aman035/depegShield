@@ -1,304 +1,211 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { FeeCurveChart } from "@/components/FeeCurveChart";
 import { SimulationReplay } from "@/components/SimulationReplay";
+import { ProblemVisual } from "@/components/ProblemVisual";
+import { SolutionVisual } from "@/components/SolutionVisual";
+import { useFullPageScroll } from "@/hooks/useFullPageScroll";
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-  }),
-};
+
+const HeroShield = dynamic(
+  () => import("@/components/HeroShield").then((m) => m.HeroShield),
+  { ssr: false }
+);
+
+const StarsBackground = dynamic(
+  () => import("@/components/StarsBackground").then((m) => m.StarsBackground),
+  { ssr: false }
+);
 
 export default function LandingPage() {
+  const containerRef = useFullPageScroll();
+
   return (
-    <div className="min-h-screen pt-16">
+    <div ref={containerRef} className="min-h-screen relative">
+      <StarsBackground />
+
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="grid-bg absolute inset-0 opacity-40" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[var(--bg-primary)]" />
-
-        <div className="relative mx-auto max-w-7xl px-6 pt-24 pb-20 md:pt-36 md:pb-32">
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            className="max-w-3xl"
-          >
-            <motion.div
-              custom={0}
-              variants={fadeUp}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-xs font-display text-[var(--text-secondary)] mb-6"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)] pulse-dot" />
-              Uniswap v4 Hook
-            </motion.div>
-
-            <motion.h1
-              custom={1}
-              variants={fadeUp}
-              className="text-4xl md:text-6xl lg:text-7xl font-body font-bold tracking-tight leading-[1.1] mb-6"
-            >
-              Adaptive fees that{" "}
-              <span className="gradient-text">shield LPs</span>{" "}
-              during stablecoin depegs
-            </motion.h1>
-
-            <motion.p
-              custom={2}
-              variants={fadeUp}
-              className="text-lg md:text-xl text-[var(--text-secondary)] leading-relaxed mb-10 max-w-2xl"
-            >
-              DepegShield charges escalating fees on imbalance-worsening swaps and zero fees on rebalancing swaps. LPs earn more during crises. Arbitrageurs recover pools faster.
-            </motion.p>
-
-            <motion.div custom={3} variants={fadeUp} className="flex gap-4">
+      <section data-section className="border-b border-[var(--border)] relative overflow-hidden">
+        <div className="mx-auto max-w-6xl px-6 relative z-10 flex items-center">
+          <div className="max-w-3xl flex-1">
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--green)]/20 bg-[var(--green)]/5 text-[var(--green)] text-[11px] font-mono uppercase tracking-widest mb-8">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] pulse-dot" />
+              Built on Uniswap v4
+            </span>
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-[-0.04em] leading-[0.9]">
+              Depeg<span className="text-[var(--green)]">Shield</span>
+            </h1>
+            <p className="text-xl md:text-2xl font-light tracking-[-0.01em] text-[var(--text-secondary)] leading-snug mt-6 max-w-lg">
+              Adaptive fees that protect liquidity providers during stablecoin depegs
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3 max-w-lg">
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--bg-raised)] border border-[var(--border)] text-[13px] text-[var(--text-secondary)]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--red)]" />
+                Escalating fees on panic sells
+              </span>
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--bg-raised)] border border-[var(--border)] text-[13px] text-[var(--text-secondary)]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)]" />
+                Zero fees on recovery flow
+              </span>
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--bg-raised)] border border-[var(--border)] text-[13px] text-[var(--text-secondary)]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--amber)]" />
+                Cross-chain early warnings
+              </span>
+            </div>
+            <div className="mt-10">
               <Link
                 href="/explore"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--accent-green)] text-[var(--bg-primary)] font-semibold text-sm hover:brightness-110 transition-all"
+                className="h-11 px-6 rounded-lg bg-[var(--green)] text-[var(--bg)] text-sm font-semibold inline-flex items-center gap-2 hover:brightness-110 transition-all"
               >
-                Explore a Pool
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
+                Monitor Pools
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </Link>
-              <a
-                href="https://github.com/aman035/depegShield"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-[var(--border-medium)] text-[var(--text-secondary)] font-semibold text-sm hover:text-[var(--text-primary)] hover:border-[var(--text-muted)] transition-all"
-              >
-                View Source
-              </a>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
+
+          <div className="hidden md:block flex-shrink-0 w-[380px] ml-auto">
+            <HeroShield />
+          </div>
         </div>
       </section>
 
-      {/* Problem / Solution */}
-      <section className="py-20 md:py-28 border-t border-[var(--border-subtle)]">
-        <div className="mx-auto max-w-7xl px-6">
-          <SectionHeader
-            tag="The Problem"
-            title="Flat fees fail when it matters most"
-          />
+      {/* Problem */}
+      <section data-section className="border-b border-[var(--border)] relative z-10">
+        <div className="mx-auto max-w-6xl px-6">
+          <SectionLabel>The Problem</SectionLabel>
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2 mb-4">
+            Flat fees fail when it matters most
+          </h2>
+          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-xl mb-10">
+            Standard pools charge the same 1bp fee whether the pool is balanced or in a death spiral. LPs absorb millions in toxic flow for pennies. No directional awareness means zero incentive to rebalance.
+          </p>
 
-          <div className="grid md:grid-cols-2 gap-6 mt-12">
-            <ProblemCard
-              icon="&#x26A0;"
-              title="1bp during a crisis"
-              description="Standard AMM pools charge the same 1 basis point fee whether the pool is balanced or 90/10 during a death spiral. LPs absorb millions in toxic flow for pennies."
-            />
-            <ProblemCard
-              icon="&#x21C4;"
-              title="No directional awareness"
-              description="A swap that pushes a pool from 60/40 to 80/20 pays the same fee as one that restores it from 80/20 to 60/40. There is zero economic signal to encourage recovery."
-            />
+          <div className="max-w-3xl">
+            <ProblemVisual />
           </div>
 
-          <div className="mt-16">
-            <SectionHeader
-              tag="The Solution"
-              title="Three mechanisms, one hook"
-            />
-
-            <div className="grid md:grid-cols-3 gap-6 mt-12">
-              <SolutionCard
-                step="01"
-                title="Measure Imbalance"
-                description="Read pool reserves in real time. Compute the imbalance ratio from sqrtPriceX96 and liquidity. Classify the pool into Safe, Warning, or Circuit Breaker zone."
-                color="var(--accent-green)"
-              />
-              <SolutionCard
-                step="02"
-                title="Directional Fees"
-                description="Swaps that worsen the imbalance pay escalating fees via a 3-zone curve. Swaps that improve the imbalance pay zero fees, incentivizing arbitrageurs to rebalance."
-                color="var(--accent-amber)"
-              />
-              <SolutionCard
-                step="03"
-                title="Protect LPs"
-                description="During a depeg, panic sellers pay proportionally more. During recovery, rebalancers pay nothing. LPs earn 10-58x more fees for bearing the same risk."
-                color="var(--accent-red)"
-              />
+          <div className="grid grid-cols-2 gap-6 mt-10 max-w-3xl">
+            <div>
+              <h3 className="text-base font-medium mb-1.5 tracking-tight text-[var(--text)]">Same fee at 50/50 and 90/10</h3>
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                Pool goes from balanced to death spiral. Fee stays at 1bp the whole way down.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-base font-medium mb-1.5 tracking-tight text-[var(--text)]">No directional signal</h3>
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                Panic selling and recovery rebalancing cost the same. Nothing encourages arbitrageurs to help.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Fee Curve */}
-      <section className="py-20 md:py-28 border-t border-[var(--border-subtle)]">
-        <div className="mx-auto max-w-7xl px-6">
-          <SectionHeader
-            tag="Fee Curve"
-            title="Three zones, one continuous curve"
-          />
-          <p className="text-[var(--text-secondary)] mt-4 max-w-2xl">
-            The fee curve ramps smoothly from 1bp (safe) through a quadratic warning zone to a linear circuit breaker. No cliff edges, no discontinuities. Hover to explore.
+      {/* Solution */}
+      <section data-section className="border-b border-[var(--border)] relative z-10">
+        <div className="mx-auto max-w-6xl px-6">
+          <SectionLabel>The Solution</SectionLabel>
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2 mb-4">
+            Directional fees that adapt in real time
+          </h2>
+          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-xl mb-10">
+            DepegShield reads pool state on every swap. Fees escalate for panic sellers and drop to zero for rebalancers. Watch the same pool scenario with the hook active.
           </p>
 
-          <div className="glass-card rounded-2xl p-6 mt-10">
-            <div className="flex flex-wrap items-center gap-6 mb-6 text-xs font-display">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-1.5 rounded-full bg-[var(--accent-green)]" />
-                <span className="text-[var(--text-muted)]">Safe (1bp flat)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-1.5 rounded-full bg-[var(--accent-amber)]" />
-                <span className="text-[var(--text-muted)]">Warning (1-15bp quadratic)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-1.5 rounded-full bg-[var(--accent-red)]" />
-                <span className="text-[var(--text-muted)]">Circuit Breaker (15bp+ linear)</span>
-              </div>
-            </div>
-            <FeeCurveChart height={400} />
+          <div className="max-w-3xl">
+            <SolutionVisual />
           </div>
-        </div>
-      </section>
 
-      {/* Simulation */}
-      <section className="py-20 md:py-28 border-t border-[var(--border-subtle)]">
-        <div className="mx-auto max-w-7xl px-6">
-          <SectionHeader
-            tag="Simulations"
-            title="Real depeg events, simulated on-chain"
-          />
-          <p className="text-[var(--text-secondary)] mt-4 max-w-2xl mb-10">
-            We modeled three historical depeg events and compared LP outcomes under DepegShield vs a standard flat-fee pool. Press play to watch each scenario unfold.
-          </p>
-          <SimulationReplay />
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-20 md:py-28 border-t border-[var(--border-subtle)]">
-        <div className="mx-auto max-w-7xl px-6">
-          <SectionHeader
-            tag="How It Works"
-            title="Under the hood"
-          />
-
-          <div className="mt-12 grid md:grid-cols-3 gap-0">
+          <div className="grid grid-cols-3 gap-6 mt-10 max-w-3xl">
             {[
               {
-                step: "1",
-                title: "beforeSwap reads state",
-                code: "sqrtPriceX96 + liquidity",
-                desc: "The hook reads the pool's current price and liquidity to derive virtual reserves and compute the imbalance ratio.",
+                num: "01",
+                title: "Measure Imbalance",
+                desc: "Compute the ratio from sqrtPriceX96 and liquidity. Classify into Safe, Warning, or Circuit Breaker zone.",
               },
               {
-                step: "2",
-                title: "Fee curve applied",
-                code: "FeeCurve.calculateFee(ratio)",
-                desc: "The 3-zone fee curve returns a fee in hundredths-of-bip. Rebalancing swaps on imbalanced pools get 0bp.",
+                num: "02",
+                title: "Directional Fees",
+                desc: "Worsening swaps pay escalating fees via a 3-zone curve. Rebalancing swaps pay zero.",
               },
               {
-                step: "3",
-                title: "Fee returned with override",
-                code: "fee | OVERRIDE_FEE_FLAG",
-                desc: "The fee is OR'd with the override flag and returned. The PoolManager applies it to the swap's input amount.",
+                num: "03",
+                title: "Protect LPs",
+                desc: "Panic sellers pay proportionally more. Rebalancers pay nothing. LPs earn 10-58x more.",
               },
-            ].map((item, i) => (
-              <div
-                key={i}
-                className={`p-6 ${i < 2 ? "md:border-r border-[var(--border-subtle)]" : ""}`}
-              >
-                <div className="font-display text-xs text-[var(--accent-green)] mb-3">
-                  Step {item.step}
-                </div>
-                <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
-                  {item.title}
-                </h3>
-                <code className="inline-block px-2 py-1 rounded bg-[var(--bg-tertiary)] text-[var(--accent-blue)] text-xs font-display mb-3">
-                  {item.code}
-                </code>
-                <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                  {item.desc}
-                </p>
+            ].map((item) => (
+              <div key={item.num}>
+                <span className="font-mono text-sm text-[var(--green)]/50">{item.num}</span>
+                <h3 className="text-base font-medium mt-1 mb-1.5 tracking-tight">{item.title}</h3>
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-[var(--border-subtle)] py-10">
-        <div className="mx-auto max-w-7xl px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-6 h-6 rounded bg-gradient-to-br from-[var(--accent-green)] to-[var(--accent-blue)] flex items-center justify-center">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--bg-primary)]">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
-            </div>
-            <span className="font-display text-sm text-[var(--text-muted)]">
-              DepegShield
-            </span>
-          </div>
-          <p className="text-xs text-[var(--text-muted)]">
-            Built for the Uniswap v4 Hookathon
+      {/* How it works */}
+      <section data-section className="border-b border-[var(--border)] relative z-10">
+        <div className="mx-auto max-w-6xl px-6">
+          <SectionLabel>How It Works</SectionLabel>
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2 mb-4">
+            Three zones, one continuous curve
+          </h2>
+          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-xl mb-10">
+            Every swap passes through the hook. The fee curve reads pool state, computes the imbalance ratio, and returns a dynamic fee in a single atomic transaction.
           </p>
+
+          <div className="max-w-3xl">
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-raised)]/30 p-2 md:p-4">
+              <FeeCurveChart height={280} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 gap-5 mt-8 max-w-3xl">
+            {[
+              { step: "01", title: "Read pool state", code: "sqrtPriceX96 + liquidity", desc: "Derive reserves and compute imbalance ratio." },
+              { step: "02", title: "Apply fee curve", code: "FeeCurve.getFee(ratio)", desc: "3-zone curve returns fee. Rebalancing gets 0bp." },
+              { step: "03", title: "Cross-chain alert", code: "ReactiveNetwork", desc: "Monitors other chain pools. Multiplies fees 1.5-3x before depeg arrives." },
+              { step: "04", title: "Return override", code: "fee | OVERRIDE_FLAG", desc: "PoolManager applies the dynamic fee to the swap." },
+            ].map((item) => (
+              <div key={item.step}>
+                <span className="font-mono text-sm text-[var(--green)]/50">{item.step}</span>
+                <h3 className="text-base font-medium mt-1 mb-1.5 tracking-tight">{item.title}</h3>
+                <code className="inline-block px-2 py-0.5 rounded bg-[var(--bg-raised)] text-[var(--text-secondary)] text-[11px] font-mono mb-1.5">
+                  {item.code}
+                </code>
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </footer>
+      </section>
+
+      {/* Simulations */}
+      <section data-section className="border-b border-[var(--border)] relative z-10">
+        <div className="mx-auto max-w-6xl px-6" data-scroll-inside>
+          <SectionLabel>Simulations</SectionLabel>
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2">
+            Real depeg events, simulated on-chain
+          </h2>
+          <p className="text-[15px] text-[var(--text-secondary)] mt-4 max-w-xl leading-relaxed mb-10">
+            Three historical depeg events modeled with forge tests. Comparing LP outcomes under DepegShield vs a standard flat-fee pool.
+          </p>
+          <div className="max-w-3xl">
+            <SimulationReplay />
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
 
-function SectionHeader({ tag, title }: { tag: string; title: string }) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div>
-      <span className="font-display text-xs uppercase tracking-widest text-[var(--accent-green)]">
-        {tag}
-      </span>
-      <h2 className="text-3xl md:text-4xl font-body font-bold text-[var(--text-primary)] mt-2">
-        {title}
-      </h2>
-    </div>
-  );
-}
-
-function ProblemCard({
-  icon,
-  title,
-  description,
-}: {
-  icon: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="glass-card rounded-xl p-6 glow-red">
-      <span className="text-2xl mb-3 block">{icon}</span>
-      <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">{title}</h3>
-      <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{description}</p>
-    </div>
-  );
-}
-
-function SolutionCard({
-  step,
-  title,
-  description,
-  color,
-}: {
-  step: string;
-  title: string;
-  description: string;
-  color: string;
-}) {
-  return (
-    <div className="glass-card rounded-xl p-6">
-      <span
-        className="font-display text-3xl font-bold block mb-3"
-        style={{ color, opacity: 0.4 }}
-      >
-        {step}
-      </span>
-      <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">{title}</h3>
-      <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{description}</p>
-    </div>
+    <p className="font-mono text-[12px] uppercase tracking-widest text-[var(--green)]">
+      {children}
+    </p>
   );
 }

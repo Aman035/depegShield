@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono, Outfit } from "next/font/google";
+import { IBM_Plex_Mono, Outfit } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { Navbar } from "@/components/Navbar";
 import "./globals.css";
 
-const jetbrainsMono = JetBrains_Mono({
+const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   variable: "--font-display",
   weight: ["400", "500", "600", "700"],
@@ -13,7 +13,6 @@ const jetbrainsMono = JetBrains_Mono({
 const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-body",
-  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -28,8 +27,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`dark ${jetbrainsMono.variable} ${outfit.variable}`}>
-      <body className="antialiased noise">
+    <html lang="en" className={`dark ${plexMono.variable} ${outfit.variable}`}>
+      <body className="antialiased">
         <Providers>
           <Navbar />
           <main>{children}</main>

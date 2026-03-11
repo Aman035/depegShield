@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
-import { getZone, ZONE_COLORS, ZONE_LABELS, ratioToMultiplier, ratioToSplit } from "@/lib/feeCurve";
+import { getZone, ZONE_LABELS, ratioToMultiplier, ratioToSplit } from "@/lib/feeCurve";
 
 interface PoolHealthGaugeProps {
   ratio: number;
@@ -11,113 +10,50 @@ interface PoolHealthGaugeProps {
 
 export function PoolHealthGauge({ ratio, reserve0, reserve1 }: PoolHealthGaugeProps) {
   const zone = getZone(ratio);
-  const colors = ZONE_COLORS[zone];
+  const color = zone === "safe" ? "var(--green)" : zone === "warning" ? "var(--amber)" : "var(--red)";
 
-  // Gauge needle position: map ratio 10000-40000 to 0-180 degrees
-  const needleAngle = useMemo(() => {
-    const clamped = Math.min(Math.max(ratio, 10000), 40000);
-    return ((clamped - 10000) / 30000) * 180;
-  }, [ratio]);
-
-  const r0Display = formatReserve(reserve0);
-  const r1Display = formatReserve(reserve1);
+  // Bar fill: map ratio 10000-40000 to 0-100%
+  const fill = Math.min(((ratio - 10000) / 30000) * 100, 100);
 
   return (
-    <div className="glass-card rounded-2xl p-8 flex flex-col items-center">
-      {/* SVG Gauge */}
-      <div className="relative w-64 h-36 mb-6">
-        <svg viewBox="0 0 200 110" className="w-full h-full">
-          {/* Background arc */}
-          <path
-            d="M 10 100 A 90 90 0 0 1 190 100"
-            fill="none"
-            stroke="var(--border-subtle)"
-            strokeWidth="12"
-            strokeLinecap="round"
-          />
-          {/* Safe zone (0-40deg) */}
-          <path
-            d="M 10 100 A 90 90 0 0 1 41.5 30.7"
-            fill="none"
-            stroke="#065f46"
-            strokeWidth="12"
-            strokeLinecap="round"
-          />
-          {/* Warning zone (40-73deg) */}
-          <path
-            d="M 41.5 30.7 A 90 90 0 0 1 73.2 14.5"
-            fill="none"
-            stroke="#78350f"
-            strokeWidth="12"
-          />
-          {/* Circuit breaker zone (73-180deg) */}
-          <path
-            d="M 73.2 14.5 A 90 90 0 0 1 190 100"
-            fill="none"
-            stroke="#7f1d1d"
-            strokeWidth="12"
-            strokeLinecap="round"
-          />
-
-          {/* Needle */}
-          <g transform={`rotate(${needleAngle}, 100, 100)`}>
-            <line
-              x1="100"
-              y1="100"
-              x2="100"
-              y2="22"
-              stroke={colors.text}
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
-            <circle cx="100" cy="100" r="5" fill={colors.text} />
-            <circle cx="100" cy="100" r="2.5" fill="var(--bg-card)" />
-          </g>
-
-          {/* Labels */}
-          <text x="10" y="108" fill="var(--text-muted)" fontSize="7" fontFamily="JetBrains Mono">
-            1.0x
-          </text>
-          <text x="170" y="108" fill="var(--text-muted)" fontSize="7" fontFamily="JetBrains Mono">
-            4.0x
-          </text>
-        </svg>
-
-        {/* Center label */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center">
-          <p className="font-display text-2xl font-bold" style={{ color: colors.text }}>
-            {ratioToMultiplier(ratio)}
-          </p>
+    <div className="border border-[var(--border)] rounded-lg p-5">
+      {/* Zone + Ratio */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="text-[11px] font-mono text-[var(--text-dim)] uppercase tracking-wider">Pool Health</p>
+          <p className="text-2xl font-mono font-semibold mt-1">{ratioToMultiplier(ratio)}</p>
         </div>
+        <span
+          className="text-[11px] font-mono uppercase tracking-wider px-2.5 py-1 rounded"
+          style={{ color, backgroundColor: `color-mix(in srgb, ${color} 12%, transparent)` }}
+        >
+          {ZONE_LABELS[zone]}
+        </span>
       </div>
 
-      {/* Zone badge */}
-      <div
-        className="px-4 py-1.5 rounded-full text-sm font-display font-medium mb-6"
-        style={{ color: colors.text, backgroundColor: colors.bg + "66", border: `1px solid ${colors.border}44` }}
-      >
-        {ZONE_LABELS[zone]}
+      {/* Bar */}
+      <div className="h-2 bg-[var(--bg-raised)] rounded-full overflow-hidden mb-5">
+        <div
+          className="h-full rounded-full transition-all duration-700 ease-out"
+          style={{ width: `${fill}%`, backgroundColor: color }}
+        />
       </div>
 
       {/* Stats */}
-      <div className="w-full grid grid-cols-3 gap-4 text-center">
-        <StatBlock label="Reserve 0" value={r0Display} />
-        <StatBlock label="Reserve 1" value={r1Display} />
-        <StatBlock label="Pool Split" value={ratioToSplit(ratio)} />
+      <div className="grid grid-cols-3 gap-4">
+        <Stat label="Reserve 0" value={formatReserve(reserve0)} />
+        <Stat label="Reserve 1" value={formatReserve(reserve1)} />
+        <Stat label="Split" value={ratioToSplit(ratio)} />
       </div>
     </div>
   );
 }
 
-function StatBlock({ label, value }: { label: string; value: string }) {
+function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs text-[var(--text-muted)] font-display uppercase tracking-wider mb-1">
-        {label}
-      </p>
-      <p className="font-display text-sm font-semibold text-[var(--text-primary)]">
-        {value}
-      </p>
+      <p className="text-[11px] font-mono text-[var(--text-dim)] uppercase tracking-wider">{label}</p>
+      <p className="font-mono text-sm mt-0.5">{value}</p>
     </div>
   );
 }
