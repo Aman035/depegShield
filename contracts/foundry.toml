@@ -9,6 +9,15 @@ solc_version = "0.8.30"
 src = "src"
 via_ir = false
 
+[rpc_endpoints]
+unichain_sepolia = "${UNICHAIN_SEPOLIA_RPC_URL}"
+sepolia = "${SEPOLIA_RPC_URL}"
+base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
+
+[etherscan]
+unichain_sepolia = { key = "${ETHERSCAN_API_KEY}", url = "https://sepolia.uniscan.xyz/api" }
+sepolia = { key = "${ETHERSCAN_API_KEY}" }
+
 [lint]
 exclude_lints = ["screaming-snake-case-immutable", "screaming-snake-case-const"]
 lint_on_build = false
