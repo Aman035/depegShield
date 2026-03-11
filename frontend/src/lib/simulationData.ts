@@ -88,7 +88,7 @@ export const scenarios: ScenarioData[] = [
       shieldFees: 5028,
       flatFees: 90,
       multiplier: 55,
-      summary: "Total collapse -- both pools worthless. But DepegShield extracted 55x more fees from panic sellers. Partial offset, not a rescue.",
+      summary: "Total collapse, both pools worthless. But DepegShield extracted 55x more fees from panic sellers. Partial offset, not a rescue.",
     },
   },
 ];
