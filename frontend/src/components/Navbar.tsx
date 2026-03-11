@@ -9,13 +9,25 @@ export function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/90 backdrop-blur-sm">
       <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        <Link href="/" className="flex items-center">
+          <svg width="32" height="32" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="navShieldGrad" x1="60" y1="10" x2="60" y2="110" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="var(--green)" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="var(--green)" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id="navPulseGrad" x1="20" y1="60" x2="100" y2="60" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="var(--green)" stopOpacity="0.2" />
+                <stop offset="30%" stopColor="var(--green)" stopOpacity="1" />
+                <stop offset="70%" stopColor="var(--green)" stopOpacity="1" />
+                <stop offset="100%" stopColor="var(--green)" stopOpacity="0.2" />
+              </linearGradient>
+            </defs>
+            <path d="M60 10 L100 30 L100 60 C100 85 75 105 60 112 C45 105 20 85 20 60 L20 30 Z" fill="url(#navShieldGrad)" />
+            <path d="M60 10 L100 30 L100 60 C100 85 75 105 60 112 C45 105 20 85 20 60 L20 30 Z" stroke="var(--green)" strokeWidth="2.5" strokeLinejoin="round" strokeOpacity="0.5" fill="none" />
+            <polyline points="25,62 40,62 48,62 55,58 60,40 65,55 70,62 78,62 95,62" stroke="url(#navPulseGrad)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            <circle cx="60" cy="40" r="3.5" fill="var(--green)" opacity="0.8" />
           </svg>
-          <span className="font-mono text-sm font-semibold tracking-tight">
-            DepegShield
-          </span>
         </Link>
 
         <div className="flex items-center gap-1">
