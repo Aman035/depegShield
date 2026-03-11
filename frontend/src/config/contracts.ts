@@ -61,3 +61,10 @@ export const DEPEG_SHIELD_ABI = [
 
 export const DYNAMIC_FEE_FLAG = 0x800000;
 export const DEFAULT_TICK_SPACING = 60;
+
+// Deployed DepegShieldHook addresses per chain (update after deployment)
+export const HOOK_ADDRESSES: Record<number, `0x${string}`> = {
+  1301: "0x0000000000000000000000000000000000000000",   // Unichain Sepolia
+  11155111: "0x0000000000000000000000000000000000000000", // Sepolia
+  84532: "0x0000000000000000000000000000000000000000",   // Base Sepolia
+};
