@@ -62,9 +62,15 @@ export const DEPEG_SHIELD_ABI = [
 export const DYNAMIC_FEE_FLAG = 0x800000;
 export const DEFAULT_TICK_SPACING = 60;
 
-// Deployed DepegShieldHook addresses per chain (update after deployment)
+// Deployed DepegShieldHook addresses per chain
 export const HOOK_ADDRESSES: Record<number, `0x${string}`> = {
-  1301: "0x0000000000000000000000000000000000000000",   // Unichain Sepolia
-  11155111: "0x0000000000000000000000000000000000000000", // Sepolia
-  84532: "0x0000000000000000000000000000000000000000",   // Base Sepolia
+  1301: "0x412F8228bEBF33F6Ee201160E45acE3aC80Fc0C0",     // Unichain Sepolia
+  11155111: "0x36B139874ad990949D27f2Dd18e7C0EF9F6040C0",  // Sepolia
+  84532: "0x18C33E2e1327f2b4782cb06a47cFe7D932C500C0",     // Base Sepolia
+};
+
+// Deployed mock stablecoin addresses (same across all chains via CREATE2)
+export const TOKEN_ADDRESSES = {
+  mUSDC: "0x996644D92645985292D57Ae903C14E58e8b6377C" as `0x${string}`,
+  mUSDT: "0x2ce34021d26ef21bd74E16544e117814593A9588" as `0x${string}`,
 };
