@@ -304,13 +304,15 @@ depegShield/
 ├── contracts/                    # Foundry project
 │   ├── src/
 │   │   ├── DepegShieldHook.sol   # Core hook: beforeSwap fee logic, afterSwap events
-│   │   └── FeeCurve.sol          # 3-zone fee curve library
+│   │   ├── FeeCurve.sol          # 3-zone fee curve library
+│   │   └── MockStablecoin.sol    # Free-mint ERC20 for testnet demos
 │   ├── test/
 │   │   ├── DepegShieldHook.t.sol # Hook behavior tests
 │   │   ├── FeeCurve.t.sol        # Fee curve unit + fuzz tests
 │   │   └── DepegScenario.t.sol   # Depeg simulation scenarios
 │   └── script/
-│       └── 00_DeployHook.s.sol   # CREATE2 deployment
+│       ├── DeployAll.s.sol       # Full deployment: tokens + hook + pool + liquidity
+│       └── 00_DeployHook.s.sol   # Hook-only CREATE2 deployment
 │
 ├── frontend/                     # Next.js app
 │   └── src/
@@ -355,7 +357,43 @@ npm run dev
 
 ### Deploy
 
+The `DeployAll` script deploys mock stablecoins (mUSDC, mUSDT), the hook, creates the pool, and adds initial liquidity in a single transaction.
+
 ```bash
 cd contracts
-forge script script/00_DeployHook.s.sol --rpc-url <your-rpc-url> --broadcast
+cp .env.example .env    # Fill in PRIVATE_KEY, fund the wallet on target chains
+source .env
+forge script script/DeployAll.s.sol --rpc-url $UNICHAIN_SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast
 ```
+
+---
+
+## Testnet Deployments
+
+### Mock Tokens (same address on all chains)
+
+| Token | Address | Decimals |
+|-------|---------|----------|
+| mUSDC | `0x996644D92645985292D57Ae903C14E58e8b6377C` | 6 |
+| mUSDT | `0x2ce34021d26ef21bd74E16544e117814593A9588` | 6 |
+
+Both have a public `mint(address, uint256)` function for testing.
+
+### Hook Addresses
+
+| Chain | Chain ID | Hook Address |
+|-------|----------|-------------|
+| Unichain Sepolia | 1301 | `0x412F8228bEBF33F6Ee201160E45acE3aC80Fc0C0` |
+| Sepolia | 11155111 | `0x36B139874ad990949D27f2Dd18e7C0EF9F6040C0` |
+| Base Sepolia | 84532 | `0x18C33E2e1327f2b4782cb06a47cFe7D932C500C0` |
+
+### Pool Configuration
+
+| Parameter | Value |
+|-----------|-------|
+| currency0 | `0x2ce34021d26ef21bd74E16544e117814593A9588` (mUSDT) |
+| currency1 | `0x996644D92645985292D57Ae903C14E58e8b6377C` (mUSDC) |
+| fee | `0x800000` (DYNAMIC_FEE_FLAG) |
+| tickSpacing | 60 |
+| Initial price | 1:1 (sqrtPriceX96 = 2^96) |
+| Initial liquidity | 100K per side |
