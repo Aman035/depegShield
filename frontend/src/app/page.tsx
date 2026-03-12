@@ -123,17 +123,17 @@ export default function LandingPage() {
               {
                 num: "01",
                 title: "Measure Imbalance",
-                desc: "Compute the ratio from sqrtPriceX96 and liquidity. Classify into Safe, Warning, or Circuit Breaker zone.",
+                desc: "Compute the ratio from sqrtPriceX96 and liquidity. Classify into Stable, Drift, Stress, Crisis, or Emergency zone.",
               },
               {
                 num: "02",
                 title: "Directional Fees",
-                desc: "Worsening swaps pay escalating fees via a 3-zone curve. Rebalancing swaps pay zero.",
+                desc: "Worsening swaps pay escalating fees via a 5-zone curve. Rebalancing swaps pay zero.",
               },
               {
                 num: "03",
                 title: "Protect LPs",
-                desc: "Panic sellers pay proportionally more. Rebalancers pay nothing. LPs earn 10-58x more.",
+                desc: "Panic sellers pay proportionally more. Rebalancers pay nothing. LPs earn 18-4,000x+ more.",
               },
             ].map((item) => (
               <div key={item.num}>
@@ -151,7 +151,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-6">
           <SectionLabel>How It Works</SectionLabel>
           <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2 mb-4">
-            Three zones, one continuous curve
+            Five zones, one continuous curve
           </h2>
           <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-xl mb-10">
             Every swap passes through the hook. The fee curve reads pool state, computes the imbalance ratio, and returns a dynamic fee in a single atomic transaction.
@@ -166,7 +166,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-4 gap-5 mt-8 max-w-3xl">
             {[
               { step: "01", title: "Read pool state", code: "sqrtPriceX96 + liquidity", desc: "Derive reserves and compute imbalance ratio." },
-              { step: "02", title: "Apply fee curve", code: "FeeCurve.getFee(ratio)", desc: "3-zone curve returns fee. Rebalancing gets 0bp." },
+              { step: "02", title: "Apply fee curve", code: "FeeCurve.getFee(ratio)", desc: "5-zone curve returns fee. Rebalancing gets 0bp." },
               { step: "03", title: "Cross-chain alert", code: "ReactiveNetwork", desc: "Monitors other chain pools. Multiplies fees 1.5-3x before depeg arrives." },
               { step: "04", title: "Return override", code: "fee | OVERRIDE_FLAG", desc: "PoolManager applies the dynamic fee to the swap." },
             ].map((item) => (
