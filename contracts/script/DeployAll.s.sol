@@ -25,10 +25,11 @@ import {DepegShieldHook} from "../src/DepegShieldHook.sol";
 contract DeployAllScript is Script {
     using CurrencyLibrary for Currency;
 
-    int24 constant TICK_SPACING = 60;
+    int24 constant TICK_SPACING = 10;           // ~0.1% per tick, suitable for stablecoins
     uint160 constant STARTING_PRICE = 2 ** 96; // 1:1
     uint256 constant MINT_AMOUNT = 1_000_000e6; // 1M tokens (6 decimals)
     uint256 constant LP_AMOUNT = 100_000e6;   // 100K per side
+    int24 constant LP_TICK_RANGE = 1000;       // ±1000 ticks = ~±10% price range
 
     function run() external {
         address deployer = msg.sender;
@@ -67,6 +68,8 @@ contract DeployAllScript is Script {
         console.log("Hook:", address(hook));
         console.log("currency0:", addr0);
         console.log("currency1:", addr1);
+        console.log("tickSpacing:", uint24(TICK_SPACING));
+        console.log("LP range: +/-", uint24(LP_TICK_RANGE), "ticks (~+/-10%)");
     }
 
     function _deployHook(IPoolManager poolManager) internal returns (DepegShieldHook) {
@@ -111,8 +114,8 @@ contract DeployAllScript is Script {
         });
 
         int24 currentTick = TickMath.getTickAtSqrtPrice(STARTING_PRICE);
-        int24 tickLower = _truncate(currentTick - 750 * TICK_SPACING, TICK_SPACING);
-        int24 tickUpper = _truncate(currentTick + 750 * TICK_SPACING, TICK_SPACING);
+        int24 tickLower = _truncate(currentTick - LP_TICK_RANGE, TICK_SPACING);
+        int24 tickUpper = _truncate(currentTick + LP_TICK_RANGE, TICK_SPACING);
 
         uint128 liquidity = LiquidityAmounts.getLiquidityForAmounts(
             STARTING_PRICE,
