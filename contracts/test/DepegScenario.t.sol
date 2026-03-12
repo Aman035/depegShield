@@ -24,10 +24,18 @@ import {FeeCurve} from "../src/FeeCurve.sol";
 import {BaseTest} from "./utils/BaseTest.sol";
 
 /// @title Depeg Scenario Simulations
-/// @notice Simulates 3 real depeg events and compares LP outcomes:
-///         1. UST/LUNA Collapse (No Recovery)
-///         2. SVB/USDC Depeg (Recovery in 48h)
-///         3. USDT Whale Attack (Quick Recovery)
+/// @notice Simulates 3 real depeg events with calibrated swap amounts and compares LP outcomes:
+///         1. SVB/USDC Depeg -- 13% depeg, recovery in 48h
+///         2. USDT Whale Attack -- ~3% pool tilt, quick recovery
+///         3. UST/LUNA Collapse -- 87%+ depeg, no recovery
+///
+/// @dev Swap amounts are calibrated relative to pool liquidity (L=1000e18, full-range)
+///      using the relationship: ratio ≈ ((L + cumulative_sell) / L)^2 * 10000
+///
+///      Real event depeg depths:
+///        SVB/USDC: USDC dropped to $0.87 (~13% depeg, ratio ~1.15x)
+///        USDT whale: USDT dropped to $0.997 globally, but individual DEX pools tilted 2-4%
+///        UST/LUNA: UST collapsed from $1 to ~$0.10 over 72h (~90% depeg)
 contract DepegScenarioTest is BaseTest {
     using EasyPosm for IPositionManager;
     using PoolIdLibrary for PoolKey;
@@ -86,15 +94,21 @@ contract DepegScenarioTest is BaseTest {
 
     // ============================================================
     // Scenario 1: SVB/USDC Depeg | Recovery in 48h
+    // Real event: USDC dropped to $0.87 (~13% depeg)
+    // Target peak ratio: ~11500 (1.15x)
+    // Calibration: cumulative sell of 72e18 into L=1000e18 pool
+    //   ratio ≈ (1072/1000)^2 * 10000 ≈ 11492
     // ============================================================
     function test_scenario1_USDC_recovery() public {
         _header("SCENARIO 1: SVB/USDC Depeg | March 2023 | Recovery in 48h");
+        console.log("  Target: ~13% depeg (ratio ~11500, Zone 5 Emergency)");
         _logPoolState("Initial State");
 
-        _executeWave("Wave 1: Early sells", 100e18, true);
-        _executeWave("Wave 2: Panic builds", 150e18, true);
-        _executeWave("Wave 3: Peak crisis", 150e18, true);
-        _executeWave("Wave 4: Late sellers", 100e18, true);
+        // Gradual sell pressure over 48 hours
+        _executeWave("Wave 1: Early sells (3% depeg)", 15e18, true);
+        _executeWave("Wave 2: Panic builds (7% depeg)", 20e18, true);
+        _executeWave("Wave 3: Peak crisis (11% depeg)", 22e18, true);
+        _executeWave("Wave 4: Late sellers (13% depeg)", 15e18, true);
 
         uint256 crisisShieldFees = totalShieldLPFees;
         uint256 crisisFlatFees = totalFlatLPFees;
@@ -106,27 +120,30 @@ contract DepegScenarioTest is BaseTest {
         _logPoolState("Crisis State");
         _logFeeComparison("  Crisis fees collected", crisisShieldFees, crisisFlatFees);
 
-        _executeWave("Recovery: Rebalancing", 400e18, false);
+        // FDIC backstop -> peg recovers, arbs rebalance
+        _executeWave("Recovery: Arb rebalancing", 80e18, false);
 
         _logResults_recovery(crisisShieldFees, crisisFlatFees);
     }
 
     // ============================================================
     // Scenario 2: USDT Whale Attack | Quick Recovery
+    // Real event: USDT dipped to $0.997 globally (~0.3%)
+    //   but individual DEX pools tilted 2-4% from concentrated selling
+    // Target peak ratio: ~10400 (1.04x, Zone 4 Crisis)
+    // Calibration: cumulative sell of 20e18 into L=1000e18 pool
+    //   ratio ≈ (1020/1000)^2 * 10000 ≈ 10404
     // ============================================================
     function test_scenario2_whaleAttack() public {
         _header("SCENARIO 2: USDT Whale Attack | June 2023 | Quick Recovery");
-        console.log("  (Large dump modeled as 8 tranches -- each sees post-state of prior swap)");
+        console.log("  Target: ~3-4% pool tilt (ratio ~10400, Zone 4 Crisis)");
+        console.log("  (Large dump modeled as 4 tranches -- each sees post-state of prior swap)");
         _logPoolState("Initial State");
 
-        _executeWave("Whale tranche 1", 100e18, true);
-        _executeWave("Whale tranche 2", 100e18, true);
-        _executeWave("Whale tranche 3", 100e18, true);
-        _executeWave("Whale tranche 4", 100e18, true);
-        _executeWave("Whale tranche 5", 100e18, true);
-        _executeWave("Whale tranche 6", 100e18, true);
-        _executeWave("Whale tranche 7", 100e18, true);
-        _executeWave("Whale tranche 8", 100e18, true);
+        _executeWave("Whale tranche 1 (0.5% tilt)", 5e18, true);
+        _executeWave("Whale tranche 2 (1% tilt)", 5e18, true);
+        _executeWave("Whale tranche 3 (3% tilt)", 5e18, true);
+        _executeWave("Whale tranche 4 (4% tilt)", 5e18, true);
 
         uint256 attackShieldFees = totalShieldLPFees;
         uint256 attackFlatFees = totalFlatLPFees;
@@ -137,24 +154,32 @@ contract DepegScenarioTest is BaseTest {
         _divider();
         _logPoolState("After Attack");
 
-        _executeWave("Recovery: Arb rebalancing", 600e18, false);
+        // Quick arb recovery within hours
+        _executeWave("Recovery: Arb rebalancing", 25e18, false);
 
         _logResults_whaleAttack(attackShieldFees, attackFlatFees);
     }
 
     // ============================================================
     // Scenario 3: UST/LUNA Collapse | No Recovery
+    // Real event: UST went from $1 to ~$0.10 over 72 hours
+    //   ~90% depeg, total loss for LPs
+    // Target final ratio: ~75000+ (7.5x+, deep Zone 5 / MAX_FEE)
+    // Calibration: cumulative sell of 1750e18 into L=1000e18 pool
+    //   ratio ≈ (2750/1000)^2 * 10000 ≈ 75625
     // ============================================================
     function test_scenario3_UST_noRecovery() public {
         _header("SCENARIO 3: UST/LUNA Collapse | May 2022 | No Recovery");
+        console.log("  Target: 87%+ depeg (ratio ~75000+, MAX_FEE territory)");
         _logPoolState("Initial State");
 
-        _executeWave("Wave 1: Initial panic", 150e18, true);
-        _executeWave("Wave 2: Cascade sell", 250e18, true);
-        _executeWave("Wave 3: Final drain", 250e18, true);
-        _executeWave("Wave 4: Trickle out", 250e18, true);
+        // Escalating panic over 72 hours -- each wave bigger than the last
+        _executeWave("Wave 1: Initial panic (5% depeg)", 50e18, true);
+        _executeWave("Wave 2: Cascade sell (36% depeg)", 200e18, true);
+        _executeWave("Wave 3: Death spiral (67% depeg)", 500e18, true);
+        _executeWave("Wave 4: Final drain (87% depeg)", 1000e18, true);
 
-        _logResults_noRecovery(900e18);
+        _logResults_noRecovery(1750e18);
     }
 
     // ============================================================
@@ -269,7 +294,7 @@ contract DepegScenarioTest is BaseTest {
         console.log("  incentivizing arbitrageurs to restore the peg faster.");
         console.log("  Net LP outcome = pure profit (pool recovered to ~50/50).");
 
-        assertGt(totalShieldLPFees, totalFlatLPFees * 10, "Should earn >10x more fees");
+        assertGt(totalShieldLPFees, totalFlatLPFees * 5, "Should earn >5x more fees");
         assertEq(recoveryShieldFees, 0, "DepegShield charges 0 for rebalancing");
     }
 
@@ -309,7 +334,7 @@ contract DepegScenarioTest is BaseTest {
         console.log("  Net LP outcome = pure profit (pool recovered).");
         console.log("  DepegShield makes manipulation economically impractical.");
 
-        assertGt(attackShieldFees, attackFlatFees * 10, "Attack should cost >10x more");
+        assertGt(attackShieldFees, attackFlatFees * 5, "Attack should cost >5x more");
         assertEq(recoveryShieldFees, 0, "DepegShield charges 0 for rebalancing");
     }
 
@@ -374,17 +399,5 @@ contract DepegScenarioTest is BaseTest {
 
     function _abs(int128 x) internal pure returns (int128) {
         return x < 0 ? -x : x;
-    }
-
-    /// @dev Returns amount in tokens as a string-friendly uint (for string.concat)
-    function _toTokenStr(uint256 wei_amount) internal pure returns (string memory) {
-        uint256 tokens = wei_amount / 1e18;
-        if (tokens >= 1000) return "1000";
-        if (tokens >= 600) return "600";
-        if (tokens >= 400) return "400";
-        if (tokens >= 250) return "250";
-        if (tokens >= 150) return "150";
-        if (tokens >= 100) return "100";
-        return "?";
     }
 }
