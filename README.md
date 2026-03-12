@@ -56,7 +56,7 @@ The LP earns \$500 in both cases. In the second case, they've absorbed \$5M of a
 
 DepegShield is a Uniswap v4 hook that makes stablecoin pool fees **responsive to risk**.
 
-1. **Dynamic fees** - The hook reads the pool's reserves every swap and computes an imbalance ratio (`max(reserveA, reserveB) / min(reserveA, reserveB)`). Fees scale with this ratio: 1bp when balanced, escalating through a quadratic warning zone to an exponential circuit breaker that can reach 200bp+ at extreme imbalance.
+1. **Dynamic fees** - The hook reads the pool's reserves every swap and computes an imbalance ratio (`max(reserveA, reserveB) / min(reserveA, reserveB)`). Fees scale with this ratio across 5 progressive zones: 1bp when balanced, ramping through linear drift and quadratic stress/crisis zones, up to 200bp+ in emergency with a 50% hard cap.
 2. **Directional fees** - Only swaps that worsen the imbalance pay escalated fees. Swaps that rebalance the pool pay zero fees, creating a self-correcting arbitrage incentive that pulls the pool back to health.
 3. **Cross-chain early warning** - A [Reactive Network](https://reactive.network/) smart contract subscribes to swap events on stablecoin pools across other chains (Ethereum, Base, Arbitrum, etc.). When it detects sustained imbalance building up elsewhere, it sends a cross-chain callback that preemptively tightens the local pool's fee curve, so LPs are protected before arbitrageurs bridge over to exploit the price lag. Deployable on any chain.
 
@@ -75,13 +75,13 @@ imbalanceRatio = max(reserve₀, reserve₁) / min(reserve₀, reserve₁)
 
 No oracles. No external data feeds. Just the pool's own `sqrtPriceX96` and `liquidity` from the PoolManager. The ratio tells you exactly how stressed the pool is:
 
-| Pool State  | Reserve Split | Ratio | What It Means                                     |
-| ----------- | ------------- | ----- | ------------------------------------------------- |
-| Balanced    | 10M / 10M     | 1.00  | Healthy. Normal trading.                          |
-| Minor drift | 11M / 9M      | 1.22  | Slight tilt. Could be normal volume fluctuation.  |
-| Tilting     | 12M / 8M      | 1.50  | Directional pressure building. Caution.           |
-| Stressed    | 14M / 6M      | 2.33  | Significant one-sided selling. Something's wrong. |
-| Critical    | 16M / 4M      | 4.00  | Pool is being drained. Active crisis.             |
+| Pool State  | Reserve Split  | Ratio  | Depeg   | What It Means                                     |
+| ----------- | -------------- | ------ | ------- | ------------------------------------------------- |
+| Balanced    | 10M / 10M      | 1.000x | 0%      | Healthy. Normal trading.                          |
+| Drifting    | 10.025M / 9.975M | 1.005x | 0.5%  | Minor tilt. Could be normal volume fluctuation.   |
+| Stressed    | 10.1M / 9.9M  | 1.01x  | 1.0%    | Directional pressure building. Early warning.     |
+| Crisis      | 10.3M / 9.7M  | 1.03x  | 3.0%    | Significant selling. Something's wrong.           |
+| Emergency   | 10.5M / 9.5M  | 1.05x  | 5.0%    | Active depeg event. Circuit breaker engaged.      |
 
 **How this helps LPs:** The pool now has a real-time risk signal. Instead of treating a \$5M panic swap the same as a \$5M routine swap, the hook knows the difference.
 
@@ -90,7 +90,7 @@ No oracles. No external data feeds. Just the pool's own `sqrtPriceX96` and `liqu
 This is the core insight. The fee is **asymmetric**: it depends on whether the swap is making the pool healthier or sicker.
 
 ```
-             Balanced Pool                    Imbalanced Pool (65/35 split)
+             Balanced Pool                    Imbalanced Pool (3%+ depeg)
           ┌─────────────────┐              ┌──────────────────────────────────┐
           │                 │              │                                  │
  tokenA → │    1bp fee      │    tokenA →  │  50-200bp+ fee (worsening)       │
@@ -110,7 +110,7 @@ If you're bringing tokenB back (the token the pool is running low on), you're he
 - Zero-fee rebalancing turns every imbalanced state into an arbitrage opportunity. Anyone can profit by bringing the scarce token back, and the more stressed the pool is, the stronger that incentive becomes. The pool actively pulls itself back to health.
 - Panic sellers can still exit, but they pay a premium that reflects the real cost they impose on LPs.
 
-The fee escalates across three zones as the pool gets more stressed:
+The fee escalates across five progressive zones calibrated to real stablecoin depeg thresholds:
 
 ```
                         Fee charged on imbalance-worsening swaps
@@ -119,43 +119,42 @@ The fee escalates across three zones as the pool gets more stressed:
   Fee
   (bps)
     │
-265 ┤                                                        ● (80/20)
-    │                                                      ╱
-    │                                                    ╱
-200 ┤                                                  ╱
-    │                                                ╱
-    │                                              ╱
-150 ┤                                            ╱
-    │                                          ╱
-    │                                       ╱
-100 ┤                                    ╱  (70/30 = 98bp)
-    │                                 ╱
-    │                              ╱
- 50 ┤                           ╱  (65/35 = 50bp)
-    │                        ╱
-    │                     ╱
- 15 ┤                  ·····  (60/40)
-    │             ····
-  5 ┤        ····
-    │    ···
-  1 ┤────
+200 ┤                                               ╱  (5% depeg)
+    │                                             ╱╱
+    │                                           ╱╱
+150 ┤                                        ╱╱
+    │                                      ╱╱
+    │                                   ╱╱
+100 ┤                                ╱╱
+    │                             ╱╱
+    │                          ╱╱
+ 50 ┤                       ·╱  (3% depeg)
+    │                    ··
+    │                 ··
+ 15 ┤              ··
+    │           ··
+  5 ┤        ···  (1% depeg)
+    │      ╱╱
+  1 ┤─────╱  (0.5% depeg)
     │
-  0 ┼────────┬──────────────┬─────────────────┬──────────────────
-          55/45          60/40              70/30             80/20
-            │              │                  │
-            │   WARNING    │  CIRCUIT BREAKER │
-   SAFE     │  quadratic   │     linear       │
-   1bp      │   1-15bp     │    50-265bp+     │
+  0 ┼─────┬──────┬──────────────┬─────────────┬──────────
+       1.005x  1.01x         1.03x         1.05x
+         │       │              │             │
+  STABLE │ DRIFT │   STRESS     │   CRISIS    │ EMERGENCY
+   1bp   │ 1-5bp │   5-50bp     │  50-200bp   │  200bp+
+   flat  │linear │  quadratic   │  quadratic  │ quadratic
 ```
 
 ```
 fee(r) =
-  baseFee                                      if r ≤ 1.22    (safe zone)
-  baseFee + (r - 1.22)² / divisor              if 1.22 < r ≤ 1.5  (warning zone)
-  warningEndFee + (r - 1.5)                    if r > 1.5    (circuit breaker)
+  1bp                                           if r <= 1.005x   (stable)
+  1bp + linear ramp to 5bp                      if 1.005 < r <= 1.01  (drift)
+  5bp + quadratic ramp to 50bp                  if 1.01  < r <= 1.03  (stress)
+  50bp + quadratic ramp to 200bp                if 1.03  < r <= 1.05  (crisis)
+  200bp + quadratic (uncapped)                  if r > 1.05      (emergency)
 ```
 
-Capped at 50% (safety maximum). The curve is continuous at both zone boundaries: the fee value and rate of increase match at each transition.
+Capped at 50% (safety maximum). The curve is value-continuous at all zone boundaries (no fee jumps). Zone thresholds are calibrated to real events: USDT 2022 dipped ~0.5%, USDC/SVB dipped ~13%, UST collapsed 90%+.
 
 ### 3. Detect Cross-Chain Depegs Before They Arrive
 
@@ -189,33 +188,31 @@ No off-chain bots. No centralized keepers. Fully on-chain. The source chains to 
 
 ## Simulations: Real Depeg Events
 
-Each simulation uses a \$20M stablecoin pool (10M/10M) and models the actual sell pressure observed in historical events. We compare total LP fees earned and net LP outcome under a standard flat-fee pool vs a DepegShield-protected pool.
+Each simulation uses a stablecoin pool with equal reserves and models the actual sell pressure observed in historical events. We compare total LP fees earned and net LP outcome under a standard flat-fee pool vs a DepegShield-protected pool. Numbers below are from on-chain Foundry simulations (`test/DepegScenario.t.sol`).
 
 ---
 
 ### 1. SVB / USDC Depeg | March 2023 | Recovery in 48h
 
-Circle disclosed \$3.3B in reserves at the failed Silicon Valley Bank. USDC dropped to \$0.87. On Aave, 3,400 positions were liquidated (\$24M, 86% in USDC). The peg recovered in 48 hours after the FDIC backstopped depositors.
+Circle disclosed \$3.3B in reserves at the failed Silicon Valley Bank. USDC dropped to \$0.87 (~13% depeg). On Aave, 3,400 positions were liquidated (\$24M, 86% in USDC). The peg recovered in 48 hours after the FDIC backstopped depositors.
 
-**Modeled scenario:** \$10M of USDC dumped into the pool over 48 hours, pushing it to 80/20. Then \$8M flows back as peg recovers.
+**Modeled scenario:** Gradual sell pressure over 48h pushes the pool to ~13% depeg (ratio 1.15x, Zone 5 Emergency). Then arbitrageurs rebalance as peg recovers.
 
-| Wave         | Sell Volume    | Pool State       | Ratio | Standard Fee | DepegShield Fee         |
-| ------------ | -------------- | ---------------- | ----- | ------------ | ----------------------- |
-| Early sells  | \$2M USDC sold | 12M / 8M (60/40) | 1.50  | 1bp = \$200  | ~15bp = \$3,000         |
-| Panic builds | \$3M USDC sold | 15M / 5M (75/25) | 3.00  | 1bp = \$300  | ~100bp = \$30,000       |
-| Peak crisis  | \$3M USDC sold | 18M / 2M (90/10) | 9.00  | 1bp = \$300  | ~200bp = \$60,000       |
-| Late sellers | \$2M USDC sold | ~20M / ~0        | max   | 1bp = \$200  | ~200bp (cap) = \$40,000 |
+| Wave         | Pool Ratio After | Zone      | Standard Fee | DepegShield Fee |
+| ------------ | ---------------- | --------- | ------------ | --------------- |
+| Early sells  | 1.03x (3% depeg) | Stress   | 1bp          | 1bp             |
+| Panic builds | 1.07x (7% depeg) | Emergency | 1bp         | ~50bp           |
+| Peak crisis  | 1.12x (11% depeg) | Emergency | 1bp        | ~208bp          |
+| Late sellers | 1.15x (13% depeg) | Emergency | 1bp        | ~287bp          |
+| Recovery     | ~1.03x (recovered) | --       | 1bp         | 0bp (free)      |
 
 |                                 | Standard Pool  | DepegShield Pool             |
 | ------------------------------- | -------------- | ---------------------------- |
-| Crisis fees earned              | \$1,000        | \$133,000                    |
-| Recovery fees (\$8M flows back) | 1bp = \$800    | 0bp = \$0 (free rebalancing) |
+| Crisis fees earned              | baseline       | **65x more**                 |
+| Recovery fees                   | 1bp            | 0bp (free rebalancing)       |
 | LP position after recovery      | Back to ~50/50 | Back to ~50/50               |
-| **Net LP outcome**              | **+\$1,800**   | **+\$133,000**               |
 
-The peg recovered. Both sets of LPs broke even on their positions. The difference: standard pool LPs earned \$1,800 for bearing 48 hours of existential risk. DepegShield LPs earned \$133,000. That's **74x more** for the same risk.
-
-Zero-fee rebalancing also means recovery flow arrives faster since arbitrageurs face no friction when bringing back the scarce token.
+The peg recovered. Both sets of LPs broke even on their positions. The difference: DepegShield LPs earned **65x more fees** for bearing the same 48 hours of existential risk. Zero-fee rebalancing also means recovery flow arrives faster since arbitrageurs face no friction when bringing back the scarce token.
 
 ---
 
@@ -223,21 +220,24 @@ Zero-fee rebalancing also means recovery flow arrives faster since arbitrageurs 
 
 A single entity dumped 31.5M USDT across DEX pools in a coordinated sell. USDT depegged to \$0.997. Over \$120M in sell pressure was absorbed at flat fees. Recovery within hours.
 
-**Modeled scenario:** \$8M whale dump hits the pool in a single concentrated burst, pushing it from 50/50 to 80/20. Pool recovers within hours as arbitrageurs rebalance.
+**Modeled scenario:** Whale dump hits the pool in 4 tranches, pushing it to ~4% pool tilt (ratio 1.04x, Zone 4 Crisis). Individual DEX pools tilted more than the aggregate market price suggests. Pool recovers within hours.
 
-| Wave                      | Sell Volume    | Pool State       | Ratio | Standard Fee | DepegShield Fee        |
-| ------------------------- | -------------- | ---------------- | ----- | ------------ | ---------------------- |
-| Whale dump (single burst) | \$8M USDT sold | 18M / 2M (90/10) | 9.00  | 1bp = \$800  | ~150bp avg = \$120,000 |
+| Wave       | Pool Ratio After   | Zone    | Standard Fee | DepegShield Fee |
+| ---------- | ------------------ | ------- | ------------ | --------------- |
+| Tranche 1  | 1.01x (1% tilt)   | Stress  | 1bp          | 1bp             |
+| Tranche 2  | 1.02x (2% tilt)   | Stress  | 1bp          | ~5bp            |
+| Tranche 3  | 1.03x (3% tilt)   | Crisis  | 1bp          | ~16bp           |
+| Tranche 4  | 1.04x (4% tilt)   | Crisis  | 1bp          | ~50bp           |
+| Recovery   | ~1.01x (recovered) | --     | 1bp          | 0bp (free)      |
 
 |                                 | Standard Pool  | DepegShield Pool |
 | ------------------------------- | -------------- | ---------------- |
-| Attack fees earned              | \$800          | \$120,000        |
-| Recovery fees (\$6M flows back) | 1bp = \$600    | 0bp = \$0        |
+| Attack fees earned              | baseline       | **18x more**     |
+| Recovery fees                   | 1bp            | 0bp (free)       |
 | LP position after recovery      | Back to ~50/50 | Back to ~50/50   |
-| **Net LP outcome**              | **+\$1,400**   | **+\$120,000**   |
-| **Cost to attacker**            | **\$800**      | **\$120,000**    |
+| **Cost to attacker**            | baseline       | **18x more**     |
 
-This is where DepegShield doubles as an anti-manipulation mechanism. In a standard pool, a whale can tilt \$20M of liquidity for \$800 in fees. Under DepegShield, the same attack costs \$120,000. The fee curve makes pool manipulation at scale economically prohibitive.
+This is where DepegShield doubles as an anti-manipulation mechanism. The fee curve makes pool manipulation at scale economically prohibitive: the whale pays 18x more in fees, all of which goes to LPs.
 
 ---
 
@@ -245,27 +245,26 @@ This is where DepegShield doubles as an anti-manipulation mechanism. In a standa
 
 UST lost its algorithmic peg and collapsed to \$0. Over \$50B in market cap was destroyed. LPs in UST pairs suffered total loss as positions converted entirely to a worthless token.
 
-**Modeled scenario:** \$18M of UST dumped into the pool over 72 hours. Token never recovers. Final price: \$0.
+**Modeled scenario:** Escalating panic over 72 hours, each wave bigger than the last. Token never recovers.
 
-| Wave          | Sell Volume   | Pool State       | Ratio | Standard Fee | DepegShield Fee          |
-| ------------- | ------------- | ---------------- | ----- | ------------ | ------------------------ |
-| Initial panic | \$3M UST sold | 13M / 7M (65/35) | 1.86  | 1bp = \$300  | ~30bp = \$9,000          |
-| Cascade       | \$5M UST sold | 18M / 2M (90/10) | 9.00  | 1bp = \$500  | ~200bp = \$100,000       |
-| Final drain   | \$5M UST sold | ~20M / ~0        | max   | 1bp = \$500  | ~200bp (cap) = \$100,000 |
-| Trickle       | \$5M UST sold | 20M / 0          | max   | 1bp = \$500  | ~200bp (cap) = \$100,000 |
+| Wave          | Pool Ratio After     | Zone      | Standard Fee | DepegShield Fee  |
+| ------------- | -------------------- | --------- | ------------ | ---------------- |
+| Initial panic | 1.10x (10% depeg)   | Emergency | 1bp          | 1bp              |
+| Cascade sell  | 1.55x (36% depeg)   | Emergency | 1bp          | ~254bp           |
+| Death spiral  | 2.23x (67% depeg)   | Emergency | 1bp          | 5000bp (50% cap) |
+| Final drain   | 3.98x (87% depeg)   | Emergency | 1bp          | 5000bp (50% cap) |
 
-|                                | Standard Pool    | DepegShield Pool |
-| ------------------------------ | ---------------- | ---------------- |
-| Crisis fees earned             | \$1,800          | \$309,000        |
-| LP position value (UST at \$0) | \$0              | \$0              |
-| **Net LP outcome**             | **-\$9,998,200** | **-\$9,691,000** |
-| Fees as % of loss              | 0.02%            | 3.1%             |
+|                                | Standard Pool | DepegShield Pool        |
+| ------------------------------ | ------------- | ----------------------- |
+| Total crisis fees earned       | baseline      | **4,314x more**         |
+| LP position value (at \$0)    | \$0           | \$0                     |
+| Average effective fee rate     | 1bp           | ~4,314bp (43% avg)      |
 
-DepegShield cannot save LPs from a total collapse. But it extracts \$309,000 in fees from the panic sellers who drained the pool. In a standard pool, LPs earned \$1,800 for absorbing \$18M of a token going to zero.
+DepegShield cannot save LPs from a total collapse. But it extracts **4,314x more fees** from the panic sellers who drained the pool. In a standard pool, LPs earned virtually nothing for absorbing a token going to zero. Under DepegShield, crisis fees provide meaningful partial compensation for impermanent loss.
 
 ---
 
-**[Moody's tracked 1,900+ depeg events through mid-2023](https://www.theblock.co/post/261727/large-cap-stablecoins-have-depegged-609-times-this-year-moodys-analytics-says), and they haven't stopped.** In October 2025, [\$3.8B in stablecoin value swung off parity](https://www.coingecko.com/learn/october-10-crypto-crash-explained) during a single flash crash that liquidated 1.6M traders. Across all three scenarios above, the pattern is the same: DepegShield LPs earn 74-150x more than standard pool LPs for bearing identical risk. In recovery scenarios, that's pure profit. In loss scenarios, it's meaningful damage offset.
+**[Moody's tracked 1,900+ depeg events through mid-2023](https://www.theblock.co/post/261727/large-cap-stablecoins-have-depegged-609-times-this-year-moodys-analytics-says), and they haven't stopped.** In October 2025, [\$3.8B in stablecoin value swung off parity](https://www.coingecko.com/learn/october-10-crypto-crash-explained) during a single flash crash that liquidated 1.6M traders. Across all three scenarios above, the pattern is the same: DepegShield LPs earn 18-4,314x more than standard pool LPs for bearing identical risk. In recovery scenarios, that's pure profit. In loss scenarios, it's meaningful damage offset.
 
 ## Theoretical Foundation
 
@@ -304,7 +303,7 @@ depegShield/
 ├── contracts/                    # Foundry project
 │   ├── src/
 │   │   ├── DepegShieldHook.sol   # Core hook: beforeSwap fee logic, afterSwap events
-│   │   ├── FeeCurve.sol          # 3-zone fee curve library
+│   │   ├── FeeCurve.sol          # 5-zone fee curve library
 │   │   └── MockStablecoin.sol    # Free-mint ERC20 for testnet demos
 │   ├── test/
 │   │   ├── DepegShieldHook.t.sol # Hook behavior tests
@@ -370,12 +369,12 @@ forge script script/DeployAll.s.sol --rpc-url $UNICHAIN_SEPOLIA_RPC_URL --privat
 
 ## Testnet Deployments
 
-### Mock Tokens (same address on all chains)
+### Mock Tokens (same address on all chains via CREATE2)
 
 | Token | Address | Decimals |
 |-------|---------|----------|
-| mUSDC | `0x996644D92645985292D57Ae903C14E58e8b6377C` | 6 |
-| mUSDT | `0x2ce34021d26ef21bd74E16544e117814593A9588` | 6 |
+| mUSDC | `0xD6E322dE450F9A276f2F3AFe72bC0C93D5284Ef0` | 6 |
+| mUSDT | `0xf02383D4eBcF11016Df5AdAEB5899B947bcC0098` | 6 |
 
 Both have a public `mint(address, uint256)` function for testing.
 
@@ -383,17 +382,18 @@ Both have a public `mint(address, uint256)` function for testing.
 
 | Chain | Chain ID | Hook Address |
 |-------|----------|-------------|
-| Unichain Sepolia | 1301 | `0x412F8228bEBF33F6Ee201160E45acE3aC80Fc0C0` |
-| Sepolia | 11155111 | `0x36B139874ad990949D27f2Dd18e7C0EF9F6040C0` |
-| Base Sepolia | 84532 | `0x18C33E2e1327f2b4782cb06a47cFe7D932C500C0` |
+| Unichain Sepolia | 1301 | `0x3B101a77A6467E457b3CEFa7Fb4964Da1FBD40c0` |
+| Sepolia | 11155111 | `0x06AAaA578EFe1A6ACbE78DAB5cdE791a0BF040C0` |
+| Base Sepolia | 84532 | `0x1CF03b90D93D33C73d3215Ba73003C69EF6040c0` |
 
 ### Pool Configuration
 
 | Parameter | Value |
 |-----------|-------|
-| currency0 | `0x2ce34021d26ef21bd74E16544e117814593A9588` (mUSDT) |
-| currency1 | `0x996644D92645985292D57Ae903C14E58e8b6377C` (mUSDC) |
+| currency0 | `0xD6E322dE450F9A276f2F3AFe72bC0C93D5284Ef0` (mUSDC) |
+| currency1 | `0xf02383D4eBcF11016Df5AdAEB5899B947bcC0098` (mUSDT) |
 | fee | `0x800000` (DYNAMIC_FEE_FLAG) |
-| tickSpacing | 60 |
+| tickSpacing | 10 |
+| LP range | +/- 1000 ticks (~+/-10% price range) |
 | Initial price | 1:1 (sqrtPriceX96 = 2^96) |
 | Initial liquidity | 100K per side |
