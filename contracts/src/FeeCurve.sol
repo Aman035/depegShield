@@ -4,50 +4,49 @@ pragma solidity ^0.8.26;
 /// @title FeeCurve
 /// @notice Pure library for computing dynamic swap fees based on pool imbalance ratio.
 ///
-///         The fee curve has 3 zones based on how lopsided the pool's reserves are:
+///         The fee curve has 5 progressive zones calibrated for realistic stablecoin depeg detection:
 ///
-///         Pool State:    Balanced         Tilting            Crisis
-///         Ratio:         1.0         1.22         1.50                   4.0+
-///                        |---Zone 1---|---Zone 2---|--------Zone 3--------|
-///                        |   SAFE     |  WARNING   |   CIRCUIT BREAKER    |
-///                        |   1bp flat | 1bp -> 15bp|   15bp -> 265bp+     |
-///                        |            | quadratic  |   linear             |
+///         Pool State:   Balanced    Drifting     Stressed      Crisis      Emergency
+///         Depeg:        <0.5%     0.5%-1.0%     1.0%-3.0%    3.0%-5.0%      >5.0%
+///         Ratio:        <=1.005x  1.005-1.01x  1.01-1.03x   1.03-1.05x    >1.05x
+///                       |--Z1--|----Z2----|------Z3------|-----Z4------|----Z5--->
+///                       | 1bp  |  1-5bp   |   5-50bp     |  50-200bp   | 200bp+  |
+///                       | flat |  linear  |  quadratic   |  quadratic  | quadratic|
 ///
-///         Zone 1 (Safe):            ratio <= 1.22x (55/45 split)
-///                                   Fee = 1bp. Pool is healthy, normal trading.
+///         Zone 1 (Stable):     ratio <= 1.005x  -> 1bp flat. Normal trading.
+///         Zone 2 (Drift):      1.005x - 1.01x   -> Linear ramp 1bp to 5bp. Early warning.
+///         Zone 3 (Stress):     1.01x  - 1.03x   -> Quadratic 5bp to 50bp. Significant depeg.
+///         Zone 4 (Crisis):     1.03x  - 1.05x   -> Quadratic 50bp to 200bp. Major depeg event.
+///         Zone 5 (Emergency):  > 1.05x           -> Quadratic from 200bp, capped at 50%. Full circuit breaker.
 ///
-///         Zone 2 (Warning):         1.22x < ratio <= 1.50x (55/45 to 60/40)
-///                                   Fee ramps quadratically from 1bp to 15bp.
-///                                   Starts slow, accelerates as imbalance grows.
-///
-///         Zone 3 (Circuit Breaker): ratio > 1.50x (worse than 60/40)
-///                                   Fee grows linearly: ~50bp at 65/35, ~98bp at 70/30,
-///                                   ~265bp at 80/20. Capped at MAX_FEE (50%).
-///
-///         The curve is continuous (no sudden jumps) at both zone boundaries.
-///         Both the fee value and the rate of increase match at each transition.
+///         The curve is value-continuous at all zone boundaries (no fee jumps).
+///         Reference: USDT 2022 dipped ~0.5%, USDC SVB dipped ~13%, UST collapsed 50-90%.
 library FeeCurve {
     // --- Fee constants (in hundredths of a bip: 100 = 1bp, 5000 = 50bp) ---
     uint24 public constant BASE_FEE = 100;     // 1bp - charged when pool is balanced
     uint24 public constant MAX_FEE = 500_000;  // 50% - absolute safety cap
 
-    // --- Zone boundaries ---
-    // Ratio is scaled by 10000 (e.g. 1.0 = 10000, 1.22 = 12200, 1.50 = 15000)
-    uint256 public constant ZONE1_UPPER = 12_200; // Safe/Warning boundary (55/45 split)
-    uint256 public constant ZONE2_UPPER = 15_000; // Warning/Circuit Breaker boundary (60/40 split)
+    // --- Zone boundaries (ratio scaled by 10000) ---
+    uint256 public constant ZONE1_UPPER = 10_050;  // 0.5% depeg (Stable/Drift)
+    uint256 public constant ZONE2_UPPER = 10_100;  // 1.0% depeg (Drift/Stress)
+    uint256 public constant ZONE3_UPPER = 10_300;  // 3.0% depeg (Stress/Crisis)
+    uint256 public constant ZONE4_UPPER = 10_500;  // 5.0% depeg (Crisis/Emergency)
 
-    // --- Zone 2 math ---
-    // fee = BASE_FEE + (ratio - ZONE1_UPPER)^2 / ZONE2_DIVISOR
-    // ZONE2_DIVISOR is chosen so the fee = 1500 (15bp) at ZONE2_UPPER:
-    //   100 + (15000 - 12200)^2 / 5600 = 100 + 2800^2 / 5600 = 100 + 1400 = 1500
-    uint256 public constant ZONE2_DIVISOR = 5_600;
-    uint24 public constant ZONE2_END_FEE = 1_500; // 15bp (precomputed fee at Zone 2/3 boundary)
+    // --- Precomputed fees at zone boundaries ---
+    uint24 public constant ZONE2_END_FEE = 500;    // 5bp at Zone2/3 boundary
+    uint24 public constant ZONE3_END_FEE = 5_000;  // 50bp at Zone3/4 boundary
+    uint24 public constant ZONE4_END_FEE = 20_000; // 200bp at Zone4/5 boundary
+
+    // --- Zone 5 overflow guard ---
+    // At d = ZONE5_MAX_D (ratio 15500, ~55% depeg), fee hits MAX_FEE.
+    // Beyond this, d*d could produce large values; early-return MAX_FEE.
+    uint256 private constant ZONE5_MAX_D = 5_000;
 
     /// @notice Calculate the fee for a given imbalance ratio
-    /// @param ratio Imbalance ratio scaled by 10000 (1.0 = 10000, 1.22 = 12200)
+    /// @param ratio Imbalance ratio scaled by 10000 (1.0 = 10000, 1.005 = 10050)
     /// @return fee Fee in hundredths of a bip
     function calculateFee(uint256 ratio) internal pure returns (uint24) {
-        // Zone 1 (Safe): ratio <= 1.22x -> flat 1bp
+        // Zone 1 (Stable): ratio <= 1.005x -> flat 1bp
         if (ratio <= ZONE1_UPPER) {
             return BASE_FEE;
         }
@@ -55,19 +54,33 @@ library FeeCurve {
         uint256 fee;
 
         if (ratio <= ZONE2_UPPER) {
-            // Zone 2 (Warning): 1.22x < ratio <= 1.50x -> quadratic ramp from 1bp to 15bp
-            // Example: at 57/43 (ratio ~13256) -> ~4.5bp, at 60/40 (ratio 15000) -> 15bp
+            // Zone 2 (Drift): 1.005x - 1.01x -> linear ramp 1bp to 5bp
+            // fee = 100 + (ratio - 10050) * 8
+            // At 10050: 100 + 0 = 100 (1bp). At 10100: 100 + 50*8 = 500 (5bp).
             uint256 d = ratio - ZONE1_UPPER;
-            fee = BASE_FEE + (d * d) / ZONE2_DIVISOR;
+            fee = BASE_FEE + d * 8;
+        } else if (ratio <= ZONE3_UPPER) {
+            // Zone 3 (Stress): 1.01x - 1.03x -> quadratic 5bp to 50bp
+            // fee = 500 + 9 * d^2 / 80
+            // At 10100: 500 + 0 = 500 (5bp). At 10300: 500 + 9*200^2/80 = 5000 (50bp).
+            uint256 d = ratio - ZONE2_UPPER;
+            fee = ZONE2_END_FEE + (9 * d * d) / 80;
+        } else if (ratio <= ZONE4_UPPER) {
+            // Zone 4 (Crisis): 1.03x - 1.05x -> quadratic 50bp to 200bp
+            // fee = 5000 + 3 * d^2 / 8
+            // At 10300: 5000 + 0 = 5000 (50bp). At 10500: 5000 + 3*200^2/8 = 20000 (200bp).
+            uint256 d = ratio - ZONE3_UPPER;
+            fee = ZONE3_END_FEE + (3 * d * d) / 8;
         } else {
-            // Zone 3 (Circuit Breaker): ratio > 1.50x -> linear growth from 15bp
-            // Example: 65/35 -> ~50bp, 70/30 -> ~98bp, 80/20 -> ~265bp
-            // Guard against overflow for extreme ratios (e.g. when one reserve = 0)
-            uint256 e = ratio - ZONE2_UPPER;
-            if (e > MAX_FEE - ZONE2_END_FEE) {
+            // Zone 5 (Emergency): > 1.05x -> quadratic from 200bp, capped at 50%
+            // fee = 20000 + d^2 / 50
+            // At 10500: 20000 (200bp). At 15000: 20000 + 4500^2/50 = 425000 (~42.5%).
+            uint256 d = ratio - ZONE4_UPPER;
+            // Guard overflow for extreme ratios
+            if (d > ZONE5_MAX_D) {
                 return MAX_FEE;
             }
-            fee = ZONE2_END_FEE + e;
+            fee = ZONE4_END_FEE + (d * d) / 50;
         }
 
         if (fee > MAX_FEE) {
