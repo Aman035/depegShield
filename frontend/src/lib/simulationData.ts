@@ -25,6 +25,8 @@ export interface ScenarioData {
   };
 }
 
+// Wave data calibrated from forge test output (DepegScenario.t.sol)
+// Pool: L=1000e18 full-range, starting at 1:1
 export const scenarios: ScenarioData[] = [
   {
     id: "usdc",
@@ -32,20 +34,20 @@ export const scenarios: ScenarioData[] = [
     subtitle: "Recovery in 48h",
     date: "March 2023",
     description:
-      "Circle disclosed $3.3B stuck at SVB. USDC dropped to $0.87. 3,400 Aave positions liquidated. Peg recovered in 48h after FDIC backstop.",
+      "Circle disclosed $3.3B stuck at SVB. USDC dropped to $0.87 (~13% depeg). 3,400 Aave positions liquidated. Peg recovered in 48h after FDIC backstop.",
     outcome: "recovery",
     waves: [
-      { label: "Early sells", amount: 100, ratioStart: 10000, ratioEnd: 12099, shieldFeeBps: 1, shieldOut: 90, flatOut: 90 },
-      { label: "Panic builds", amount: 150, ratioStart: 12099, ratioEnd: 15624, shieldFeeBps: 1, shieldOut: 109, flatOut: 109 },
-      { label: "Peak crisis", amount: 150, ratioStart: 15624, ratioEnd: 19590, shieldFeeBps: 21, shieldOut: 85, flatOut: 85 },
-      { label: "Late sellers", amount: 100, ratioStart: 19590, ratioEnd: 22471, shieldFeeBps: 60, shieldOut: 47, flatOut: 47 },
-      { label: "Recovery", amount: 400, ratioStart: 22471, ratioEnd: 11386, shieldFeeBps: 0, shieldOut: 561, flatOut: 562, isBuy: true },
+      { label: "Early sells", amount: 15, ratioStart: 10000, ratioEnd: 10302, shieldFeeBps: 1, shieldOut: 14, flatOut: 14 },
+      { label: "Panic builds", amount: 20, ratioStart: 10302, ratioEnd: 10710, shieldFeeBps: 50, shieldOut: 18, flatOut: 19 },
+      { label: "Peak crisis", amount: 22, ratioStart: 10710, ratioEnd: 11160, shieldFeeBps: 208, shieldOut: 19, flatOut: 20 },
+      { label: "Late sellers", amount: 15, ratioStart: 11160, ratioEnd: 11470, shieldFeeBps: 287, shieldOut: 12, flatOut: 13 },
+      { label: "Recovery", amount: 80, ratioStart: 11470, ratioEnd: 10274, shieldFeeBps: 0, shieldOut: 84, flatOut: 84, isBuy: true },
     ],
     result: {
-      shieldFees: 952,
-      flatFees: 90,
-      multiplier: 10,
-      summary: "Pool recovered to ~50/50. DepegShield LPs earned 10x more for bearing the same risk. Zero-fee rebalancing accelerated recovery.",
+      shieldFees: 991,
+      flatFees: 15,
+      multiplier: 65,
+      summary: "Pool recovered to ~50/50. DepegShield LPs earned 65x more for bearing the same risk. Zero-fee rebalancing accelerated recovery.",
     },
   },
   {
@@ -54,20 +56,20 @@ export const scenarios: ScenarioData[] = [
     subtitle: "Quick Recovery",
     date: "June 2023",
     description:
-      "A single entity dumped 31.5M USDT across DEX pools. USDT depegged to $0.997. $120M+ in sell pressure absorbed at flat fees. Recovery within hours.",
+      "A single entity dumped 31.5M USDT across DEX pools. USDT depegged to $0.997. Individual pool tilts reached 3-4%. Recovery within hours.",
     outcome: "attack-recovery",
     waves: [
-      { label: "Tranche 1", amount: 200, ratioStart: 10000, ratioEnd: 14399, shieldFeeBps: 1, shieldOut: 165, flatOut: 165 },
-      { label: "Tranche 2", amount: 200, ratioStart: 14399, ratioEnd: 19587, shieldFeeBps: 21, shieldOut: 118, flatOut: 118 },
-      { label: "Tranche 3", amount: 200, ratioStart: 19587, ratioEnd: 25537, shieldFeeBps: 75, shieldOut: 88, flatOut: 88 },
-      { label: "Tranche 4", amount: 200, ratioStart: 25537, ratioEnd: 32231, shieldFeeBps: 136, shieldOut: 68, flatOut: 68 },
-      { label: "Arb recovery", amount: 600, ratioStart: 32231, ratioEnd: 13386, shieldFeeBps: 0, shieldOut: 931, flatOut: 934, isBuy: true },
+      { label: "Tranche 1", amount: 5, ratioStart: 10000, ratioEnd: 10100, shieldFeeBps: 1, shieldOut: 4, flatOut: 4 },
+      { label: "Tranche 2", amount: 5, ratioStart: 10100, ratioEnd: 10200, shieldFeeBps: 5, shieldOut: 4, flatOut: 4 },
+      { label: "Tranche 3", amount: 5, ratioStart: 10200, ratioEnd: 10302, shieldFeeBps: 16, shieldOut: 4, flatOut: 4 },
+      { label: "Tranche 4", amount: 5, ratioStart: 10302, ratioEnd: 10403, shieldFeeBps: 50, shieldOut: 4, flatOut: 4 },
+      { label: "Arb recovery", amount: 25, ratioStart: 10403, ratioEnd: 10108, shieldFeeBps: 0, shieldOut: 25, flatOut: 25, isBuy: true },
     ],
     result: {
-      shieldFees: 4694,
-      flatFees: 140,
-      multiplier: 58,
-      summary: "Pool recovered. Attack cost 58x more under DepegShield. Manipulation becomes economically impractical.",
+      shieldFees: 36,
+      flatFees: 4,
+      multiplier: 18,
+      summary: "Pool recovered. Attack cost 18x more under DepegShield. Manipulation becomes economically impractical.",
     },
   },
   {
@@ -76,19 +78,19 @@ export const scenarios: ScenarioData[] = [
     subtitle: "No Recovery",
     date: "May 2022",
     description:
-      "UST lost its algorithmic peg and collapsed to $0. Over $50B in market cap destroyed. LPs suffered total loss as positions converted to a worthless token.",
+      "UST lost its algorithmic peg and collapsed to ~$0.10. Over $50B in market cap destroyed. LPs suffered near-total loss as positions converted to a worthless token.",
     outcome: "collapse",
     waves: [
-      { label: "Initial panic", amount: 150, ratioStart: 10000, ratioEnd: 13224, shieldFeeBps: 1, shieldOut: 130, flatOut: 130 },
-      { label: "Cascade sell", amount: 250, ratioStart: 13224, ratioEnd: 19597, shieldFeeBps: 2, shieldOut: 155, flatOut: 155 },
-      { label: "Final drain", amount: 250, ratioStart: 19597, ratioEnd: 27171, shieldFeeBps: 60, shieldOut: 107, flatOut: 108 },
-      { label: "Trickle out", amount: 250, ratioStart: 27171, ratioEnd: 35909, shieldFeeBps: 136, shieldOut: 78, flatOut: 79 },
+      { label: "Initial panic", amount: 50, ratioStart: 10000, ratioEnd: 11024, shieldFeeBps: 1, shieldOut: 47, flatOut: 47 },
+      { label: "Cascade sell", amount: 200, ratioStart: 11024, ratioEnd: 15497, shieldFeeBps: 254, shieldOut: 149, flatOut: 152 },
+      { label: "Death spiral", amount: 500, ratioStart: 15497, ratioEnd: 22347, shieldFeeBps: 5000, shieldOut: 134, flatOut: 228 },
+      { label: "Final drain", amount: 1000, ratioStart: 22347, ratioEnd: 39796, shieldFeeBps: 5000, shieldOut: 167, flatOut: 207 },
     ],
     result: {
-      shieldFees: 5028,
-      flatFees: 90,
-      multiplier: 55,
-      summary: "Total collapse, both pools worthless. But DepegShield extracted 55x more fees from panic sellers. Partial offset, not a rescue.",
+      shieldFees: 755103,
+      flatFees: 175,
+      multiplier: 4314,
+      summary: "Total collapse, both pools worthless. But DepegShield extracted 4,314x more fees from panic sellers. Partial offset, not a rescue.",
     },
   },
 ];
