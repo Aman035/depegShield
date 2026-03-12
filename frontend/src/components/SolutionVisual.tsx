@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { calculateFee, toBps, ZONE1_UPPER } from "@/lib/feeCurve";
 
 /**
  * Interactive comparison: same pool degradation but with DepegShield.
@@ -33,8 +34,9 @@ export function SolutionVisual() {
     let dir = 1;
 
     const interval = setInterval(() => {
-      current += dir * 0.4;
-      if (current >= 85) {
+      const speed = dir === 1 ? 0.1 : 0.3;
+      current += dir * speed;
+      if (current >= 65) {
         dir = -1;
         setPhase("recovering");
       } else if (current <= 50) {
@@ -47,25 +49,37 @@ export function SolutionVisual() {
     return () => clearInterval(interval);
   }, [isVisible]);
 
-  // Calculate fee using the same logic as FeeCurve.sol
-  const imbalanceRatio = Math.max(ratio, 100 - ratio) / Math.min(ratio, 100 - ratio);
-  const scaledRatio = Math.round(imbalanceRatio * 10000);
+  // Piecewise map: spread each zone across equal visual bar segments
+  // Zone 1 (Stable):    bar 50-52 -> ratio 10000-10050
+  // Zone 2 (Drift):     bar 52-54 -> ratio 10050-10100
+  // Zone 3 (Stress):    bar 54-57 -> ratio 10100-10300
+  // Zone 4 (Crisis):    bar 57-60 -> ratio 10300-10500
+  // Zone 5 (Emergency): bar 60-65 -> ratio 10500-15500
+  const scaledRatio = Math.round(barToRatio(ratio));
+  const fee = Math.round(toBps(calculateFee(scaledRatio)));
 
-  let fee = 1; // bps
-  if (scaledRatio <= 12200) {
-    fee = 1;
-  } else if (scaledRatio <= 15000) {
-    const d = scaledRatio - 12200;
-    fee = Math.round((100 + (d * d) / 5600) / 100);
-  } else {
-    fee = Math.round((1500 + (scaledRatio - 15000)) / 100);
+  function barToRatio(bar: number): number {
+    if (bar <= 52) return 10000 + ((bar - 50) / 2) * 50;       // 10000-10050
+    if (bar <= 54) return 10050 + ((bar - 52) / 2) * 50;       // 10050-10100
+    if (bar <= 57) return 10100 + ((bar - 54) / 3) * 200;      // 10100-10300
+    if (bar <= 60) return 10300 + ((bar - 57) / 3) * 200;      // 10300-10500
+    return 10500 + ((bar - 60) / 5) * 5000;                    // 10500-15500
   }
 
   const isRecovering = phase === "recovering";
-  const displayFee = isRecovering && scaledRatio > 12200 ? 0 : fee;
+  const displayFee = isRecovering && scaledRatio > ZONE1_UPPER ? 0 : fee;
 
   const tokenA = ratio;
   const tokenB = 100 - ratio;
+
+  /** Map ratio to meter needle position (0-100%) across 5 zones */
+  function meterPct(r: number): number {
+    if (r <= 10050) return ((r - 10000) / 50) * 10;              // Zone 1: 0-10%
+    if (r <= 10100) return 10 + ((r - 10050) / 50) * 10;         // Zone 2: 10-20%
+    if (r <= 10300) return 20 + ((r - 10100) / 200) * 30;        // Zone 3: 20-50%
+    if (r <= 10500) return 50 + ((r - 10300) / 200) * 25;        // Zone 4: 50-75%
+    return Math.min(75 + ((r - 10500) / 2000) * 25, 100);        // Zone 5: 75-100%
+  }
 
   return (
     <div ref={ref} className="solution-visual">
@@ -107,29 +121,33 @@ export function SolutionVisual() {
           {displayFee === 0 && (
             <span className="sv-fee-free">free recovery</span>
           )}
-          {displayFee > 15 && (
-            <span className="sv-fee-escalated">circuit breaker</span>
+          {displayFee > 50 && (
+            <span className="sv-fee-escalated">emergency</span>
           )}
         </div>
       </div>
 
-      {/* Fee meter */}
+      {/* Fee meter -- 5 zones */}
       <div className="sv-meter">
         <div className="sv-meter-track">
-          <div className="sv-meter-zone sv-zone-safe" style={{ width: "22%" }} />
-          <div className="sv-meter-zone sv-zone-warn" style={{ width: "28%" }} />
-          <div className="sv-meter-zone sv-zone-crit" style={{ width: "50%" }} />
+          <div className="sv-meter-zone sv-zone-stable" style={{ width: "10%" }} />
+          <div className="sv-meter-zone sv-zone-drift" style={{ width: "10%" }} />
+          <div className="sv-meter-zone sv-zone-stress" style={{ width: "30%" }} />
+          <div className="sv-meter-zone sv-zone-crisis" style={{ width: "25%" }} />
+          <div className="sv-meter-zone sv-zone-emergency" style={{ width: "25%" }} />
           <div
             className="sv-meter-needle"
             style={{
-              left: `${Math.min(((scaledRatio - 10000) / 25000) * 100, 100)}%`,
+              left: `${meterPct(scaledRatio)}%`,
             }}
           />
         </div>
         <div className="sv-meter-labels">
           <span>1bp</span>
-          <span>15bp</span>
-          <span>50bp+</span>
+          <span>5bp</span>
+          <span>50bp</span>
+          <span>200bp</span>
+          <span>MAX</span>
         </div>
       </div>
 
@@ -268,16 +286,24 @@ export function SolutionVisual() {
           height: 100%;
         }
 
-        .sv-zone-safe {
-          background: rgba(52, 211, 153, 0.3);
+        .sv-zone-stable {
+          background: rgba(0, 200, 83, 0.3);
         }
 
-        .sv-zone-warn {
+        .sv-zone-drift {
+          background: rgba(102, 187, 106, 0.3);
+        }
+
+        .sv-zone-stress {
           background: rgba(245, 166, 35, 0.3);
         }
 
-        .sv-zone-crit {
+        .sv-zone-crisis {
           background: rgba(229, 57, 53, 0.3);
+        }
+
+        .sv-zone-emergency {
+          background: rgba(183, 28, 28, 0.3);
         }
 
         .sv-meter-needle {
