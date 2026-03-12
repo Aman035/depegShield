@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { scenarios, type WaveData } from "@/lib/simulationData";
-import { ratioToMultiplier, ratioToSplit, getZone } from "@/lib/feeCurve";
+import { ratioToMultiplier, ratioToSplit, getZone, getZoneColor, getZoneLabel } from "@/lib/feeCurve";
 
 export function SimulationReplay() {
   const [activeScenario, setActiveScenario] = useState(0);
@@ -127,11 +127,8 @@ export function SimulationReplay() {
 
         <div className="ml-auto font-mono text-[12px] text-[var(--text-dim)]">
           {ratioToMultiplier(currentRatio)} ({ratioToSplit(currentRatio)})
-          <span className={`ml-2 ${
-            zone === "safe" ? "text-[var(--green)]" :
-            zone === "warning" ? "text-[var(--amber)]" : "text-[var(--red)]"
-          }`}>
-            {zone === "safe" ? "SAFE" : zone === "warning" ? "WARNING" : "CIRCUIT BREAKER"}
+          <span className="ml-2" style={{ color: getZoneColor(zone) }}>
+            {getZoneLabel(zone)}
           </span>
         </div>
       </div>
@@ -163,9 +160,7 @@ export function SimulationReplay() {
 
 function WaveRow({ wave, index, isActive, isRevealed }: { wave: WaveData; index: number; isActive: boolean; isRevealed: boolean }) {
   const endZone = getZone(wave.ratioEnd);
-  const feeColor = wave.shieldFeeBps === 0 ? "var(--green)" :
-    endZone === "safe" ? "var(--text)" :
-    endZone === "warning" ? "var(--amber)" : "var(--red)";
+  const feeColor = wave.shieldFeeBps === 0 ? "var(--green)" : getZoneColor(endZone);
 
   return (
     <tr
