@@ -87,7 +87,7 @@ export function Faucet({ chainId, onMinted }: FaucetProps) {
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-raised)]/40 backdrop-blur-sm overflow-hidden">
-      <div className="px-5 py-3 border-b border-[var(--border)] flex items-center justify-between">
+      <div className="px-5 py-3.5 border-b border-[var(--border)] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
             <path
@@ -98,19 +98,19 @@ export function Faucet({ chainId, onMinted }: FaucetProps) {
               strokeOpacity="0.6"
             />
           </svg>
-          <span className="font-mono text-[12px] uppercase tracking-wider text-[var(--text-secondary)]">
+          <span className="font-mono text-[13px] uppercase tracking-wider text-[var(--text-secondary)]">
             Testnet Faucet
           </span>
         </div>
-        <span className="text-[10px] font-mono text-[var(--text-dim)] uppercase tracking-wider">
+        <span className="text-[12px] font-mono text-[var(--text-secondary)] uppercase tracking-wider">
           Free tokens
         </span>
       </div>
 
-      <div className="p-5">
+      <div className="p-6">
         {/* Balance display */}
         {address && (
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-2 gap-3 mb-5">
             <BalanceCard
               token="mUSDC"
               balance={balUSDC !== undefined ? formatBalance(balUSDC) : '--'}
@@ -162,7 +162,7 @@ export function Faucet({ chainId, onMinted }: FaucetProps) {
                   strokeLinejoin="round"
                 />
               </svg>
-              <span className="text-[13px] font-medium text-[var(--green)]">
+              <span className="text-[14px] font-medium text-[var(--green)]">
                 10,000 {lastMintedInfo.token} minted
               </span>
             </div>
@@ -190,7 +190,7 @@ export function Faucet({ chainId, onMinted }: FaucetProps) {
 
         {/* Not connected hint */}
         {!address && (
-          <p className="text-[12px] text-[var(--text-dim)] mt-3 flex items-center gap-1.5">
+          <p className="text-[13px] text-[var(--text-secondary)] mt-4 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--amber)]" />
             Connect wallet to mint tokens
           </p>
@@ -202,11 +202,11 @@ export function Faucet({ chainId, onMinted }: FaucetProps) {
 
 function BalanceCard({ token, balance }: { token: string; balance: string }) {
   return (
-    <div className="rounded-lg border border-[var(--border)] px-3 py-2.5 bg-[var(--bg)]/50">
-      <p className="text-[10px] font-mono text-[var(--text-dim)] uppercase tracking-wider mb-1">
+    <div className="rounded-lg border border-[var(--border)] px-4 py-3 bg-[var(--bg)]/50">
+      <p className="text-[12px] font-mono text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
         {token} Balance
       </p>
-      <p className="text-[14px] font-mono font-semibold text-[var(--text)] tracking-tight">
+      <p className="text-[16px] font-mono font-semibold text-[var(--text)] tracking-tight">
         {balance}
       </p>
     </div>
@@ -239,7 +239,7 @@ function MintButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="flex-1 h-10 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[13px] font-mono font-medium text-[var(--text)] hover:border-[var(--green)]/40 hover:bg-[var(--green)]/5 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+      className="flex-1 h-11 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[14px] font-mono font-medium text-[var(--text)] hover:border-[var(--green)]/40 hover:bg-[var(--green)]/5 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
     >
       {isBusy && isActive ? (
         <span className="flex items-center justify-center gap-2">

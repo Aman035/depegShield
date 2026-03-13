@@ -95,7 +95,7 @@ export function FeeCurveChart({ currentRatio, height = 340 }: FeeCurveChartProps
             ticks={xTicks}
             tickFormatter={(v: number) => (v / 10000).toFixed(2) + "x"}
             stroke="transparent"
-            tick={{ fill: "var(--text-dim)", fontSize: 11, fontFamily: "var(--font-display)" }}
+            tick={{ fill: "var(--text-dim)", fontSize: 12, fontFamily: "var(--font-display)" }}
             tickLine={false}
             axisLine={{ stroke: "var(--border)" }}
             interval={0}
@@ -105,7 +105,7 @@ export function FeeCurveChart({ currentRatio, height = 340 }: FeeCurveChartProps
           <YAxis
             tickFormatter={(v: number) => v + "bp"}
             stroke="transparent"
-            tick={{ fill: "var(--text-dim)", fontSize: 11, fontFamily: "var(--font-display)" }}
+            tick={{ fill: "var(--text-dim)", fontSize: 12, fontFamily: "var(--font-display)" }}
             tickLine={false}
             axisLine={false}
             width={52}
@@ -130,8 +130,12 @@ export function FeeCurveChart({ currentRatio, height = 340 }: FeeCurveChartProps
             dot={
               currentRatio
                 ? (props: Record<string, unknown>) => {
-                    const { cx, cy, payload } = props as { cx: number; cy: number; payload: { ratio: number } };
-                    if (currentRatio && Math.abs(payload.ratio - currentRatio) < 15) {
+                    const { cx, cy, payload, index } = props as { cx: number; cy: number; payload: { ratio: number }; index: number };
+                    // Find the single closest data point to currentRatio
+                    const closestIdx = data.reduce((best, pt, i) =>
+                      Math.abs(pt.ratio - currentRatio!) < Math.abs(data[best].ratio - currentRatio!) ? i : best
+                    , 0);
+                    if (index === closestIdx) {
                       return (
                         <g key="current">
                           <circle cx={cx} cy={cy} r={10} fill="#fff" opacity={0.08} />
@@ -166,26 +170,26 @@ function CurveTooltip({
   const zoneLabel = ZONE_LABELS[zone] ?? d.zone;
 
   return (
-    <div className="bg-[var(--bg)] border border-[var(--border)] rounded-lg px-4 py-3 shadow-xl">
+    <div className="bg-[var(--bg)] border border-[var(--border)] rounded-lg px-4 py-3.5 shadow-xl">
       <div className="flex items-center gap-2 mb-2">
         <span
-          className="w-2 h-2 rounded-full"
+          className="w-2.5 h-2.5 rounded-full"
           style={{ background: zoneColor }}
         />
         <span
-          className="text-[11px] font-mono uppercase tracking-widest"
+          className="text-[12px] font-mono uppercase tracking-widest font-medium"
           style={{ color: zoneColor }}
         >
           {zoneLabel}
         </span>
       </div>
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         <p className="text-[13px] text-[var(--text-secondary)]">
           Ratio{" "}
           <span className="text-[var(--text)] font-mono font-medium">
             {(d.ratio / 10000).toFixed(3)}x
           </span>{" "}
-          <span className="text-[var(--text-dim)]">({ratioToSplit(d.ratio)})</span>
+          <span className="text-[var(--text-secondary)]">({ratioToSplit(d.ratio)})</span>
         </p>
         <p className="text-[13px] text-[var(--text-secondary)]">
           Fee{" "}
