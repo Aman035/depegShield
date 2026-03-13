@@ -78,8 +78,8 @@ export const ZONE_LABELS = {
 } as const;
 
 export const ZONE_COLORS = {
-  stable: { text: "#00c853", bg: "#1a3a2a" },
-  drift: { text: "#66bb6a", bg: "#1a3a2a" },
+  stable: { text: "#34d399", bg: "#1a3a2a" },
+  drift: { text: "#34d399", bg: "#1a3a2a" },
   stress: { text: "#f5a623", bg: "#3a2e1a" },
   crisis: { text: "#e53935", bg: "#3a1a1a" },
   emergency: { text: "#b71c1c", bg: "#3a1010" },

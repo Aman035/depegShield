@@ -287,11 +287,11 @@ export function SolutionVisual() {
         }
 
         .sv-zone-stable {
-          background: rgba(0, 200, 83, 0.3);
+          background: rgba(52, 211, 153, 0.3);
         }
 
         .sv-zone-drift {
-          background: rgba(102, 187, 106, 0.3);
+          background: rgba(52, 211, 153, 0.25);
         }
 
         .sv-zone-stress {
