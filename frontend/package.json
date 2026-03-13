@@ -21,8 +21,8 @@
     "react-dom": "19.2.3",
     "recharts": "^3.8.0",
     "three": "^0.183.2",
-    "viem": "^2.47.1",
-    "wagmi": "^3.5.0"
+    "viem": "^2.47.2",
+    "wagmi": "^2.19.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
