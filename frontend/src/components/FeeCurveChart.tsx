@@ -41,7 +41,7 @@ export function FeeCurveChart({ currentRatio, height = 340 }: FeeCurveChartProps
           <ReferenceArea
             x1={ZONE1_UPPER}
             x2={ZONE2_UPPER}
-            fill="rgba(102, 187, 106, 0.02)"
+            fill="rgba(52, 211, 153, 0.02)"
             fillOpacity={1}
           />
           <ReferenceArea
@@ -66,7 +66,7 @@ export function FeeCurveChart({ currentRatio, height = 340 }: FeeCurveChartProps
           {/* Zone boundary lines */}
           <ReferenceLine
             x={ZONE1_UPPER}
-            stroke="rgba(102, 187, 106, 0.2)"
+            stroke="rgba(52, 211, 153, 0.2)"
             strokeDasharray="6 4"
           />
           <ReferenceLine
