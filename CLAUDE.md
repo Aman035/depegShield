@@ -48,12 +48,20 @@ Always follow these when making contract changes:
 - `_beforeSwap()` reads `sqrtPriceX96` + `liquidity` from PoolManager, derives virtual reserves, computes imbalance ratio (`max/min * 10000`), checks swap direction, and returns a fee with `LPFeeLibrary.OVERRIDE_FEE_FLAG`.
 - `_afterSwap()` emits `SwapFeeApplied` event with post-swap state.
 
-**Fee logic** (via `FeeCurve.sol` library):
-- Zone 1 (ratio <= 12200, safe): 1bp flat
-- Zone 2 (12200 < ratio <= 15000, warning): quadratic ramp, `100 + d^2/5600`
-- Zone 3 (ratio > 15000, circuit breaker): linear, `1500 + (ratio - 15000)`
-- Capped at MAX_FEE (500000 = 50%)
+**Fee logic** (via `FeeCurve.sol` library -- 5-zone adaptive curve):
+- Zone 1 Stable (ratio <= 10050, <=0.5% deviation): 1bp flat (BASE_FEE = 100)
+- Zone 2 Drift (10050 < ratio <= 10100, 0.5-1%): linear ramp 1-5bp
+- Zone 3 Stress (10100 < ratio <= 10300, 1-3%): quadratic 5-50bp
+- Zone 4 Crisis (10300 < ratio <= 10500, 3-5%): quadratic 50-200bp
+- Zone 5 Emergency (ratio > 10500, >5%): quadratic from 200bp, capped at MAX_FEE (500000 = 50%)
 - Rebalancing swaps on imbalanced pools -> 0bp (incentivize recovery)
+
+**Cross-chain contagion shield** (Phase 4):
+- `AlertReceiver.sol` stores per-token cross-chain imbalance ratios from Reactive Network callbacks
+- `DepegShieldHook` constructor takes `(IPoolManager, address alertReceiver)` -- address(0) disables
+- Fee floor: `effectiveFee = max(localFee, FeeCurve.calculateFee(crossChainRatio))` -- same curve, earlier activation
+- Rebalancing swaps stay 0bp regardless of cross-chain signals
+- `ReactiveMonitor.sol` runs on Reactive Lasna, subscribes to V2/V3/V4 pool events, relays raw ratio
 
 **Pool requirement:** Must initialize with `LPFeeLibrary.DYNAMIC_FEE_FLAG` (0x800000) in `PoolKey.fee`.
 
@@ -66,10 +74,10 @@ Tests use a custom `BaseTest` -> `Deployers` chain that deploys the full v4 stac
 ## Key Configuration
 
 - **Solidity:** 0.8.30, cancun EVM, FFI enabled
-- **Dependencies** are git submodules in `contracts/lib/` (forge-std, uniswap-hooks, hookmate)
+- **Dependencies** are git submodules in `contracts/lib/` (forge-std, uniswap-hooks, hookmate, reactive-lib)
 - **Remappings:** `@uniswap/v4-core/` and `@uniswap/v4-periphery/` resolve through `contracts/lib/uniswap-hooks/lib/`
 - **Frontend:** Next.js 14+ (App Router), Tailwind CSS, viem + wagmi, RainbowKit, Recharts
 
 ## Implementation Plan
 
-See `PLAN.md` for phased implementation spec. Phase 1 (directional fee hook) and Phase 2 (fee curve + depeg simulation) are complete. Phase 3 (frontend) is in progress. Phase 4 covers Reactive Network cross-chain integration.
+See `PLAN.md` for phased implementation spec. All 4 phases are complete. Phase 4 added Reactive Network cross-chain early warning (AlertReceiver, ReactiveMonitor, hook fee floor via same curve).
