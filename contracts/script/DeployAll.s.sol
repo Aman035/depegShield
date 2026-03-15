@@ -19,6 +19,7 @@ import {AddressConstants} from "hookmate/constants/AddressConstants.sol";
 
 import {MockStablecoin} from "../src/MockStablecoin.sol";
 import {DepegShieldHook} from "../src/DepegShieldHook.sol";
+import {AlertReceiver} from "../src/AlertReceiver.sol";
 
 /// @notice Deploys mUSDC, mUSDT, DepegShieldHook, creates pool, and adds liquidity.
 /// Run once per chain. Logs all deployed addresses.
@@ -45,18 +46,28 @@ contract DeployAllScript is Script {
         mUSDC.mint(deployer, MINT_AMOUNT);
         mUSDT.mint(deployer, MINT_AMOUNT);
 
-        // 2. Deploy hook
-        DepegShieldHook hook = _deployHook(poolManager);
+        // 2. Deploy AlertReceiver (pass CALLBACK_PROXY env var, or address(0) to disable)
+        address alertReceiverAddr = address(0);
+        try vm.envAddress("CALLBACK_PROXY") returns (address callbackProxy) {
+            AlertReceiver alertReceiver = new AlertReceiver(callbackProxy);
+            alertReceiverAddr = address(alertReceiver);
+            console.log("AlertReceiver:", alertReceiverAddr);
+        } catch {
+            console.log("AlertReceiver: disabled (no CALLBACK_PROXY set)");
+        }
 
-        // 3. Sort tokens
+        // 3. Deploy hook
+        DepegShieldHook hook = _deployHook(poolManager, alertReceiverAddr);
+
+        // 4. Sort tokens
         (address addr0, address addr1) = address(mUSDC) < address(mUSDT)
             ? (address(mUSDC), address(mUSDT))
             : (address(mUSDT), address(mUSDC));
 
-        // 4. Approvals
+        // 5. Approvals
         _approveTokens(addr0, addr1, permit2, positionManager);
 
-        // 5. Create pool + add liquidity
+        // 6. Create pool + add liquidity
         _createPoolAndLiquidity(addr0, addr1, hook, positionManager, deployer);
 
         vm.stopBroadcast();
@@ -72,13 +83,13 @@ contract DeployAllScript is Script {
         console.log("LP range: +/-", uint24(LP_TICK_RANGE), "ticks (~+/-10%)");
     }
 
-    function _deployHook(IPoolManager poolManager) internal returns (DepegShieldHook) {
+    function _deployHook(IPoolManager poolManager, address alertReceiverAddr) internal returns (DepegShieldHook) {
         uint160 flags = uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG);
-        bytes memory constructorArgs = abi.encode(poolManager);
+        bytes memory constructorArgs = abi.encode(poolManager, alertReceiverAddr);
         (address hookAddress, bytes32 salt) =
             HookMiner.find(CREATE2_FACTORY, flags, type(DepegShieldHook).creationCode, constructorArgs);
 
-        DepegShieldHook hook = new DepegShieldHook{salt: salt}(poolManager);
+        DepegShieldHook hook = new DepegShieldHook{salt: salt}(poolManager, alertReceiverAddr);
         require(address(hook) == hookAddress, "Hook address mismatch");
         return hook;
     }

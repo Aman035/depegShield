@@ -15,13 +15,14 @@ contract DeployHookScript is BaseScript {
         uint160 flags = uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG);
 
         // Mine a salt that will produce a hook address with the correct flags
-        bytes memory constructorArgs = abi.encode(poolManager);
+        address alertReceiverAddr = address(0); // Set via env if needed
+        bytes memory constructorArgs = abi.encode(poolManager, alertReceiverAddr);
         (address hookAddress, bytes32 salt) =
             HookMiner.find(CREATE2_FACTORY, flags, type(DepegShieldHook).creationCode, constructorArgs);
 
         // Deploy the hook using CREATE2
         vm.startBroadcast();
-        DepegShieldHook hook = new DepegShieldHook{salt: salt}(poolManager);
+        DepegShieldHook hook = new DepegShieldHook{salt: salt}(poolManager, alertReceiverAddr);
         vm.stopBroadcast();
 
         require(address(hook) == hookAddress, "DeployHookScript: Hook Address Mismatch");
