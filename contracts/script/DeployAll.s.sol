@@ -47,12 +47,14 @@ contract DeployAllScript is Script {
         mUSDT.mint(deployer, MINT_AMOUNT);
 
         // 2. Deploy AlertReceiver (pass CALLBACK_PROXY env var, or address(0) to disable)
+        address callbackProxy = vm.envOr("CALLBACK_PROXY", address(0));
         address alertReceiverAddr = address(0);
-        try vm.envAddress("CALLBACK_PROXY") returns (address callbackProxy) {
+        if (callbackProxy != address(0)) {
             AlertReceiver alertReceiver = new AlertReceiver(callbackProxy);
             alertReceiverAddr = address(alertReceiver);
             console.log("AlertReceiver:", alertReceiverAddr);
-        } catch {
+            console.log("Callback Proxy:", callbackProxy);
+        } else {
             console.log("AlertReceiver: disabled (no CALLBACK_PROXY set)");
         }
 
