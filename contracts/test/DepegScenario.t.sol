@@ -61,7 +61,7 @@ contract DepegScenarioTest is BaseTest {
         address flags = address(
             uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG) ^ (0x4444 << 144)
         );
-        deployCodeTo("DepegShieldHook.sol:DepegShieldHook", abi.encode(poolManager), flags);
+        deployCodeTo("DepegShieldHook.sol:DepegShieldHook", abi.encode(poolManager, address(0)), flags);
         hook = DepegShieldHook(flags);
 
         _initPools();
