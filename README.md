@@ -304,11 +304,18 @@ depegShield/
 │   ├── src/
 │   │   ├── DepegShieldHook.sol   # Core hook: beforeSwap fee logic, afterSwap events
 │   │   ├── FeeCurve.sol          # 5-zone fee curve library
-│   │   └── MockStablecoin.sol    # Free-mint ERC20 for testnet demos
+│   │   ├── AlertReceiver.sol     # Cross-chain alert storage (per destination chain)
+│   │   ├── MockStablecoin.sol    # Free-mint ERC20 for testnet demos
+│   │   ├── interfaces/
+│   │   │   └── IAlertReceiver.sol
+│   │   └── reactive/
+│   │       └── ReactiveMonitor.sol  # Reactive Network cross-chain monitor
 │   ├── test/
 │   │   ├── DepegShieldHook.t.sol # Hook behavior tests
 │   │   ├── FeeCurve.t.sol        # Fee curve unit + fuzz tests
-│   │   └── DepegScenario.t.sol   # Depeg simulation scenarios
+│   │   ├── DepegScenario.t.sol   # Depeg simulation scenarios
+│   │   ├── AlertReceiver.t.sol   # Alert receiver + pair registry tests
+│   │   └── CrossChainFee.t.sol   # Cross-chain fee floor tests
 │   └── script/
 │       ├── DeployAll.s.sol       # Full deployment: tokens + hook + pool + liquidity
 │       └── 00_DeployHook.s.sol   # Hook-only CREATE2 deployment
@@ -316,7 +323,7 @@ depegShield/
 ├── frontend/                     # Next.js app
 │   └── src/
 │       ├── app/                  # Landing page + Explore page
-│       ├── components/           # FeeCurveChart, SimulationReplay, PoolHealthGauge
+│       ├── components/           # FeeCurveChart, SimulationReplay, PoolHealthGauge, CrossChainAlert
 │       └── lib/                  # Fee curve math, simulation data
 ```
 
@@ -369,31 +376,52 @@ forge script script/DeployAll.s.sol --rpc-url $UNICHAIN_SEPOLIA_RPC_URL --privat
 
 ## Testnet Deployments
 
+All contracts are verified on their respective block explorers.
+
 ### Mock Tokens (same address on all chains via CREATE2)
 
 | Token | Address | Decimals |
 |-------|---------|----------|
-| mUSDC | `0xD6E322dE450F9A276f2F3AFe72bC0C93D5284Ef0` | 6 |
-| mUSDT | `0xf02383D4eBcF11016Df5AdAEB5899B947bcC0098` | 6 |
+| mUSDC | [`0x58C414Bd85bf1d39985476Dfa5fBd59af356E8f0`](https://sepolia.etherscan.io/address/0x58C414Bd85bf1d39985476Dfa5fBd59af356E8f0) | 6 |
+| mUSDT | [`0x2170d1eC7B1392611323A4c1793e580349CC5CC0`](https://sepolia.etherscan.io/address/0x2170d1eC7B1392611323A4c1793e580349CC5CC0) | 6 |
 
 Both have a public `mint(address, uint256)` function for testing.
 
-### Hook Addresses
+### Sepolia (Chain ID: 11155111)
 
-| Chain | Chain ID | Hook Address |
-|-------|----------|-------------|
-| Unichain Sepolia | 1301 | `0x3B101a77A6467E457b3CEFa7Fb4964Da1FBD40c0` |
-| Sepolia | 11155111 | `0x06AAaA578EFe1A6ACbE78DAB5cdE791a0BF040C0` |
-| Base Sepolia | 84532 | `0x1CF03b90D93D33C73d3215Ba73003C69EF6040c0` |
+| Contract | Address | Explorer |
+|----------|---------|----------|
+| DepegShieldHook | `0x93de3452327DA8fB5D80206985F0A9eec44440c0` | [View](https://sepolia.etherscan.io/address/0x93de3452327DA8fB5D80206985F0A9eec44440c0) |
+| AlertReceiver | `0xb81b96Ecfa25087A1842992dea733644B6b15098` | [View](https://sepolia.etherscan.io/address/0xb81b96Ecfa25087A1842992dea733644B6b15098) |
+
+### Base Sepolia (Chain ID: 84532)
+
+| Contract | Address | Explorer |
+|----------|---------|----------|
+| DepegShieldHook | `0x460f82ffd825C1567E0819BfE8723017632c80C0` | [View](https://sepolia.basescan.org/address/0x460f82ffd825C1567E0819BfE8723017632c80C0) |
+| AlertReceiver | `0x3e627528eB8FE610c3E330f7db76C63F8ABF3FEe` | [View](https://sepolia.basescan.org/address/0x3e627528eB8FE610c3E330f7db76C63F8ABF3FEe) |
+
+### Unichain Sepolia (Chain ID: 1301)
+
+| Contract | Address | Explorer |
+|----------|---------|----------|
+| DepegShieldHook | `0xd24636276076261C9462bD763db25bd957Cc80c0` | [View](https://sepolia.uniscan.xyz/address/0xd24636276076261C9462bD763db25bd957Cc80c0) |
+| AlertReceiver | `0x3e627528eB8FE610c3E330f7db76C63F8ABF3FEe` | [View](https://sepolia.uniscan.xyz/address/0x3e627528eB8FE610c3E330f7db76C63F8ABF3FEe) |
+
+### Reactive Lasna (Chain ID: 5318007)
+
+| Contract | Address | Explorer |
+|----------|---------|----------|
+| ReactiveMonitor | `0x996644D92645985292D57Ae903C14E58e8b6377C` | [View](https://lasna.reactscan.net/address/0x996644D92645985292D57Ae903C14E58e8b6377C) |
 
 ### Pool Configuration
 
 | Parameter | Value |
 |-----------|-------|
-| currency0 | `0xD6E322dE450F9A276f2F3AFe72bC0C93D5284Ef0` (mUSDC) |
-| currency1 | `0xf02383D4eBcF11016Df5AdAEB5899B947bcC0098` (mUSDT) |
 | fee | `0x800000` (DYNAMIC_FEE_FLAG) |
 | tickSpacing | 10 |
 | LP range | +/- 1000 ticks (~+/-10% price range) |
 | Initial price | 1:1 (sqrtPriceX96 = 2^96) |
 | Initial liquidity | 100K per side |
+
+Mock tokens have a public `mint(address, uint256)` function for testing.
