@@ -40,9 +40,9 @@ contract DeployAllScript is Script {
 
         vm.startBroadcast();
 
-        // 1. Deploy tokens + mint
-        MockStablecoin mUSDC = new MockStablecoin("Mock USDC", "mUSDC");
-        MockStablecoin mUSDT = new MockStablecoin("Mock USDT", "mUSDT");
+        // 1. Deploy tokens via CREATE2 (deterministic addresses across all chains)
+        MockStablecoin mUSDC = new MockStablecoin{salt: bytes32("mUSDC")}("Mock USDC", "mUSDC");
+        MockStablecoin mUSDT = new MockStablecoin{salt: bytes32("mUSDT")}("Mock USDT", "mUSDT");
         mUSDC.mint(deployer, MINT_AMOUNT);
         mUSDT.mint(deployer, MINT_AMOUNT);
 
