@@ -17,8 +17,9 @@ base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
 reactive_lasna = "${REACTIVE_RPC_URL}"
 
 [etherscan]
-unichain_sepolia = { key = "${ETHERSCAN_API_KEY}", url = "https://sepolia.uniscan.xyz/api" }
 sepolia = { key = "${ETHERSCAN_API_KEY}" }
+base_sepolia = { key = "${ETHERSCAN_API_KEY}" }
+unichain_sepolia = { key = "${ETHERSCAN_API_KEY}", url = "https://sepolia.uniscan.xyz/api" }
 
 [lint]
 exclude_lints = ["screaming-snake-case-immutable", "screaming-snake-case-const"]
