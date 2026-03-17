@@ -387,20 +387,22 @@ ALERT_RECEIVER=0x... forge script script/03_DeployHook.s.sol --rpc-url <RPC_URL>
 HOOK=0x... forge script script/04_CreatePool.s.sol --rpc-url <RPC_URL> --private-key "\$PRIVATE_KEY" --broadcast
 
 # Step 5: Deploy ReactiveMonitor on Reactive Lasna
-# IMPORTANT: Use `forge create` (not `forge script`) because the Reactive system
-# contract doesn't exist locally -- script simulation would fail.
-# The constructor args (pool configs + destination AlertReceivers) are in
-# script/05_DeployReactive.s.sol for reference. All config MUST be in the
-# constructor because the ReactVM creates an isolated state copy at deploy time.
-forge create --rpc-url https://lasna-rpc.rnk.dev/ \
-  --private-key "\$PRIVATE_KEY" \
-  src/reactive/ReactiveMonitor.sol:ReactiveMonitor \
-  --constructor-args \
-    "[(11155111,0xE03A1074c86CFeDd5C142C4F04F1a1536e203543,<pairId>,3,<poolId>),...]" \
-    "[(11155111,0x38f09Ee073E52cb2B18cDec0b7626Ec5f3D93C79),...]"
+# All pool/destination config MUST be in the constructor because the ReactVM
+# creates an isolated state copy at deploy time. Post-deploy calls only
+# affect the RNK chain state, not the ReactVM.
 # See 05_DeployReactive.s.sol for the full constructor args with all 3 chains.
+#
+# Use cast send --create (forge create may time out on Reactive Lasna):
+BYTECODE=\$(forge inspect src/reactive/ReactiveMonitor.sol:ReactiveMonitor bytecode)
+ARGS=\$(cast abi-encode "c((uint256,address,bytes32,uint8,bytes32)[],(uint256,address)[])" \
+  "[(chainId,poolManager,pairId,poolType,poolId),...]" \
+  "[(chainId,alertReceiver),...]")
+cast send --rpc-url https://lasna-rpc.rnk.dev/ --private-key "\$PRIVATE_KEY" \
+  --legacy --value 0.1ether --gas-limit 3000000 \
+  --create "\${BYTECODE}\${ARGS#0x}"
+
 # After deployment, fund the callback proxies on each destination chain:
-#   cast send <CALLBACK_PROXY> "depositTo(address)" <REACTIVE_MONITOR_ADDR> --value 0.1ether
+#   cast send <CALLBACK_PROXY> "depositTo(address)" <MONITOR_ADDR> --value 0.01ether
 ```
 
 ---
@@ -422,28 +424,28 @@ Both have a public `mint(address, uint256)` function for testing.
 
 | Contract | Address | Explorer |
 |----------|---------|----------|
-| DepegShieldHook | `0x85ebC96b77F57F365401C861ED4A349a233340C0` | [View](https://sepolia.etherscan.io/address/0x85ebC96b77F57F365401C861ED4A349a233340C0) |
-| AlertReceiver | `0x38f09Ee073E52cb2B18cDec0b7626Ec5f3D93C79` | [View](https://sepolia.etherscan.io/address/0x38f09Ee073E52cb2B18cDec0b7626Ec5f3D93C79) |
+| DepegShieldHook | `0xd3ad90041576954255d8fa1325774b90e501c0c0` | [View](https://sepolia.etherscan.io/address/0xd3ad90041576954255d8fa1325774b90e501c0c0) |
+| AlertReceiver | `0xdfa0a5fb820dad9f94259a51c340a227706bf566` | [View](https://sepolia.etherscan.io/address/0xdfa0a5fb820dad9f94259a51c340a227706bf566) |
 
 ### Base Sepolia (Chain ID: 84532)
 
 | Contract | Address | Explorer |
 |----------|---------|----------|
-| DepegShieldHook | `0xC8de86D4CA095f343f0E69c3b8f7c9845A2580c0` | [View](https://sepolia.basescan.org/address/0xC8de86D4CA095f343f0E69c3b8f7c9845A2580c0) |
-| AlertReceiver | `0xB25AC436f9BC71Ab36745bF3bC550649e3ec2A48` | [View](https://sepolia.basescan.org/address/0xB25AC436f9BC71Ab36745bF3bC550649e3ec2A48) |
+| DepegShieldHook | `0x057cb98f4891c6bef266497524e64f09ef5180c0` | [View](https://sepolia.basescan.org/address/0x057cb98f4891c6bef266497524e64f09ef5180c0) |
+| AlertReceiver | `0xcfdaf5c867592bfb967d63839e5738da366814dc` | [View](https://sepolia.basescan.org/address/0xcfdaf5c867592bfb967d63839e5738da366814dc) |
 
 ### Unichain Sepolia (Chain ID: 1301)
 
 | Contract | Address | Explorer |
 |----------|---------|----------|
-| DepegShieldHook | `0xdd39c05761379AbB059623a303C03f180e4f00c0` | [View](https://sepolia.uniscan.xyz/address/0xdd39c05761379AbB059623a303C03f180e4f00c0) |
-| AlertReceiver | `0xB25AC436f9BC71Ab36745bF3bC550649e3ec2A48` | [View](https://sepolia.uniscan.xyz/address/0xB25AC436f9BC71Ab36745bF3bC550649e3ec2A48) |
+| DepegShieldHook | `0x8eab304b3a950f7c85e168a1ce6b159f132100c0` | [View](https://sepolia.uniscan.xyz/address/0x8eab304b3a950f7c85e168a1ce6b159f132100c0) |
+| AlertReceiver | `0x137b8d50bd5c3794103636e4e18a49e973c2d9a2` | [View](https://sepolia.uniscan.xyz/address/0x137b8d50bd5c3794103636e4e18a49e973c2d9a2) |
 
 ### Reactive Lasna (Chain ID: 5318007)
 
 | Contract | Address | Explorer |
 |----------|---------|----------|
-| ReactiveMonitor | `0x583bdf3BCE926E36d84eB93a9fd3867D24E5943C` | [View](https://lasna.reactscan.net/address/0x583bdf3BCE926E36d84eB93a9fd3867D24E5943C) |
+| ReactiveMonitor | `0x9E0e4adC37068ed91c96103dFdCcFA310dF3acf1` | [View](https://lasna.reactscan.net/address/0xf30180b9cec36f5a3762332c0f102fe8c024d64e/contract/0x9E0e4adC37068ed91c96103dFdCcFA310dF3acf1) |
 
 ### Pool Configuration
 

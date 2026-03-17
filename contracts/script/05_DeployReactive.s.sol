@@ -29,7 +29,7 @@ contract DeployReactiveScript is Script {
             poolAddr: 0xE03A1074c86CFeDd5C142C4F04F1a1536e203543,
             pairId: pairId,
             poolType: ReactiveMonitor.PoolType.UNISWAP_V4,
-            poolId: 0xdc52a01aabd01f0ec5c0eeccef433e918a36eadf468983f2c9f0ec7a96d364e0
+            poolId: 0x108bd10edacc12795a6055ee83cb79073fe747f0f7718c7302e98b26e8655029
         });
 
         // Base Sepolia: PoolManager + PoolId
@@ -38,7 +38,7 @@ contract DeployReactiveScript is Script {
             poolAddr: 0x05E73354cFDd6745C338b50BcFDfA3Aa6fA03408,
             pairId: pairId,
             poolType: ReactiveMonitor.PoolType.UNISWAP_V4,
-            poolId: 0x52e35422afb4629f1124e5c6db7f265f53689ee4752a105c80c0ff31145b6291
+            poolId: 0x6e94cdca9867ed71c973be329f1dc07d8637394f4d88a0903b56a7913c00fc99
         });
 
         // Unichain Sepolia: PoolManager + PoolId
@@ -47,7 +47,7 @@ contract DeployReactiveScript is Script {
             poolAddr: 0x00B036B58a818B1BC34d502D3fE730Db729e62AC,
             pairId: pairId,
             poolType: ReactiveMonitor.PoolType.UNISWAP_V4,
-            poolId: 0x00b590714f08485053f3fd2354d1479503c3de52aa2756a32c4f174c8a9e7d11
+            poolId: 0x99a19ea3120e6cf78bb8887c846e2659bb48644213f8256be4c371768ca86215
         });
 
         ReactiveMonitor.DestConfig[] memory dests = new ReactiveMonitor.DestConfig[](3);
@@ -55,19 +55,19 @@ contract DeployReactiveScript is Script {
         // Sepolia AlertReceiver
         dests[0] = ReactiveMonitor.DestConfig({
             chainId: 11155111,
-            alertReceiver: 0x38f09Ee073E52cb2B18cDec0b7626Ec5f3D93C79
+            alertReceiver: 0xDfa0A5FB820dad9f94259a51C340a227706bf566
         });
 
         // Base Sepolia AlertReceiver
         dests[1] = ReactiveMonitor.DestConfig({
             chainId: 84532,
-            alertReceiver: 0xB25AC436f9BC71Ab36745bF3bC550649e3ec2A48
+            alertReceiver: 0xCFdAf5c867592BFB967d63839E5738da366814dC
         });
 
         // Unichain Sepolia AlertReceiver
         dests[2] = ReactiveMonitor.DestConfig({
             chainId: 1301,
-            alertReceiver: 0xB25AC436f9BC71Ab36745bF3bC550649e3ec2A48
+            alertReceiver: 0x137b8d50BD5c3794103636E4E18a49e973c2d9a2
         });
 
         // --- Deploy ---
