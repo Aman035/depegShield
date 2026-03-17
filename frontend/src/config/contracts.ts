@@ -127,14 +127,124 @@ export const SWAP_ROUTER_ABI = [
   },
 ] as const;
 
+export const ALERT_RECEIVER_ABI = [
+  {
+    type: "function",
+    name: "getCrossChainRatio",
+    inputs: [
+      { name: "tokenA", type: "address" },
+      { name: "tokenB", type: "address" },
+    ],
+    outputs: [{ name: "ratio", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getAlert",
+    inputs: [{ name: "pairId", type: "bytes32" }],
+    outputs: [
+      {
+        name: "",
+        type: "tuple",
+        components: [
+          { name: "sourceRatio", type: "uint128" },
+          { name: "timestamp", type: "uint40" },
+          { name: "ttl", type: "uint40" },
+          { name: "sourceChainId", type: "uint48" },
+        ],
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getAlertForTokens",
+    inputs: [
+      { name: "tokenA", type: "address" },
+      { name: "tokenB", type: "address" },
+    ],
+    outputs: [
+      {
+        name: "",
+        type: "tuple",
+        components: [
+          { name: "sourceRatio", type: "uint128" },
+          { name: "timestamp", type: "uint40" },
+          { name: "ttl", type: "uint40" },
+          { name: "sourceChainId", type: "uint48" },
+        ],
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "registerPair",
+    inputs: [
+      { name: "pairId", type: "bytes32" },
+      { name: "localToken0", type: "address" },
+      { name: "localToken1", type: "address" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "handleAlert",
+    inputs: [
+      { name: "rvmId", type: "address" },
+      { name: "pairId", type: "bytes32" },
+      { name: "sourceRatio", type: "uint256" },
+      { name: "sourceChainId", type: "uint256" },
+      { name: "ttl", type: "uint40" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "event",
+    name: "AlertSet",
+    inputs: [
+      { name: "pairId", type: "bytes32", indexed: true },
+      { name: "sourceRatio", type: "uint128", indexed: false },
+      { name: "sourceChainId", type: "uint48", indexed: false },
+      { name: "ttl", type: "uint40", indexed: false },
+    ],
+  },
+  {
+    type: "event",
+    name: "PairRegistered",
+    inputs: [
+      { name: "pairId", type: "bytes32", indexed: true },
+      { name: "token0", type: "address", indexed: false },
+      { name: "token1", type: "address", indexed: false },
+    ],
+  },
+] as const;
+
+// AlertReceiver addresses per chain (deployed alongside hooks)
+export const ALERT_RECEIVER_ADDRESSES: Record<number, `0x${string}`> = {
+  1301: "0xB25AC436f9BC71Ab36745bF3bC550649e3ec2A48",     // Unichain Sepolia
+  11155111: "0x38f09Ee073E52cb2B18cDec0b7626Ec5f3D93C79",  // Sepolia
+  84532: "0xB25AC436f9BC71Ab36745bF3bC550649e3ec2A48",     // Base Sepolia
+};
+
+// Chain display names
+export const CHAIN_NAMES: Record<number, string> = {
+  1301: "Unichain Sepolia",
+  11155111: "Sepolia",
+  84532: "Base Sepolia",
+  5318007: "Reactive Lasna",
+};
+
 export const DYNAMIC_FEE_FLAG = 0x800000;
 export const DEFAULT_TICK_SPACING = 10;
 
 // Deployed DepegShieldHook addresses per chain
 export const HOOK_ADDRESSES: Record<number, `0x${string}`> = {
-  1301: "0x3B101a77A6467E457b3CEFa7Fb4964Da1FBD40c0",     // Unichain Sepolia
-  11155111: "0x06AAaA578EFe1A6ACbE78DAB5cdE791a0BF040C0",  // Sepolia
-  84532: "0x1CF03b90D93D33C73d3215Ba73003C69EF6040c0",     // Base Sepolia
+  1301: "0xdd39c05761379AbB059623a303C03f180e4f00c0",     // Unichain Sepolia
+  11155111: "0x85ebC96b77F57F365401C861ED4A349a233340C0",  // Sepolia
+  84532: "0xC8de86D4CA095f343f0E69c3b8f7c9845A2580c0",     // Base Sepolia
 };
 
 // Hookmate V4 SwapRouter addresses per chain
@@ -144,10 +254,10 @@ export const SWAP_ROUTER_ADDRESSES: Record<number, `0x${string}`> = {
   84532: "0x71cD4Ea054F9Cb3D3BF6251A00673303411A7DD9",     // Base Sepolia
 };
 
-// Deployed mock stablecoin addresses (same across all chains via CREATE2)
+// Deployed mock stablecoin addresses (same on all chains via CREATE2)
 export const TOKEN_ADDRESSES = {
-  mUSDC: "0xD6E322dE450F9A276f2F3AFe72bC0C93D5284Ef0" as `0x${string}`,
-  mUSDT: "0xf02383D4eBcF11016Df5AdAEB5899B947bcC0098" as `0x${string}`,
+  mUSDC: "0x58C414Bd85bf1d39985476Dfa5fBd59af356E8f0" as `0x${string}`,
+  mUSDT: "0x2170d1eC7B1392611323A4c1793e580349CC5CC0" as `0x${string}`,
 };
 
 // Token decimals

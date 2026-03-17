@@ -317,8 +317,11 @@ depegShield/
 │   │   ├── AlertReceiver.t.sol   # Alert receiver + pair registry tests
 │   │   └── CrossChainFee.t.sol   # Cross-chain fee floor tests
 │   └── script/
-│       ├── DeployAll.s.sol       # Full deployment: tokens + hook + pool + liquidity
-│       └── 00_DeployHook.s.sol   # Hook-only CREATE2 deployment
+│       ├── 01_DeployTokens.s.sol        # Deploy mUSDC + mUSDT via CREATE2
+│       ├── 02_DeployAlertReceiver.s.sol  # Deploy AlertReceiver + register pair
+│       ├── 03_DeployHook.s.sol           # Mine salt + deploy hook (CREATE2)
+│       ├── 04_CreatePool.s.sol           # Init pool at 1:1 + seed liquidity
+│       └── 05_DeployReactive.s.sol       # ReactiveMonitor config reference
 │
 ├── frontend/                     # Next.js app
 │   └── src/
@@ -363,13 +366,41 @@ npm run dev
 
 ### Deploy
 
-The `DeployAll` script deploys mock stablecoins (mUSDC, mUSDT), the hook, creates the pool, and adds initial liquidity in a single transaction.
+Deployment uses 5 isolated scripts, run in order per chain. Each script is self-contained with its own env vars.
 
 ```bash
 cd contracts
 cp .env.example .env    # Fill in PRIVATE_KEY, fund the wallet on target chains
 source .env
-forge script script/DeployAll.s.sol --rpc-url $UNICHAIN_SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+# Step 1: Deploy mock tokens (once per chain, deterministic addresses via CREATE2)
+forge script script/01_DeployTokens.s.sol --rpc-url <RPC_URL> --private-key "\$PRIVATE_KEY" --broadcast
+
+# Step 2: Deploy AlertReceiver + register mUSDC/mUSDT pair
+# CALLBACK_PROXY varies per chain (see script comments for addresses)
+CALLBACK_PROXY=0x... forge script script/02_DeployAlertReceiver.s.sol --rpc-url <RPC_URL> --private-key "\$PRIVATE_KEY" --broadcast
+
+# Step 3: Deploy DepegShieldHook (mines CREATE2 salt for flag-encoded address)
+ALERT_RECEIVER=0x... forge script script/03_DeployHook.s.sol --rpc-url <RPC_URL> --private-key "\$PRIVATE_KEY" --broadcast
+
+# Step 4: Create pool at 1:1 price + seed 100K liquidity per side
+HOOK=0x... forge script script/04_CreatePool.s.sol --rpc-url <RPC_URL> --private-key "\$PRIVATE_KEY" --broadcast
+
+# Step 5: Deploy ReactiveMonitor on Reactive Lasna
+# IMPORTANT: Use `forge create` (not `forge script`) because the Reactive system
+# contract doesn't exist locally -- script simulation would fail.
+# The constructor args (pool configs + destination AlertReceivers) are in
+# script/05_DeployReactive.s.sol for reference. All config MUST be in the
+# constructor because the ReactVM creates an isolated state copy at deploy time.
+forge create --rpc-url https://lasna-rpc.rnk.dev/ \
+  --private-key "\$PRIVATE_KEY" \
+  src/reactive/ReactiveMonitor.sol:ReactiveMonitor \
+  --constructor-args \
+    "[(11155111,0xE03A1074c86CFeDd5C142C4F04F1a1536e203543,<pairId>,3,<poolId>),...]" \
+    "[(11155111,0x38f09Ee073E52cb2B18cDec0b7626Ec5f3D93C79),...]"
+# See 05_DeployReactive.s.sol for the full constructor args with all 3 chains.
+# After deployment, fund the callback proxies on each destination chain:
+#   cast send <CALLBACK_PROXY> "depositTo(address)" <REACTIVE_MONITOR_ADDR> --value 0.1ether
 ```
 
 ---
@@ -391,28 +422,28 @@ Both have a public `mint(address, uint256)` function for testing.
 
 | Contract | Address | Explorer |
 |----------|---------|----------|
-| DepegShieldHook | `0x93de3452327DA8fB5D80206985F0A9eec44440c0` | [View](https://sepolia.etherscan.io/address/0x93de3452327DA8fB5D80206985F0A9eec44440c0) |
-| AlertReceiver | `0xb81b96Ecfa25087A1842992dea733644B6b15098` | [View](https://sepolia.etherscan.io/address/0xb81b96Ecfa25087A1842992dea733644B6b15098) |
+| DepegShieldHook | `0x85ebC96b77F57F365401C861ED4A349a233340C0` | [View](https://sepolia.etherscan.io/address/0x85ebC96b77F57F365401C861ED4A349a233340C0) |
+| AlertReceiver | `0x38f09Ee073E52cb2B18cDec0b7626Ec5f3D93C79` | [View](https://sepolia.etherscan.io/address/0x38f09Ee073E52cb2B18cDec0b7626Ec5f3D93C79) |
 
 ### Base Sepolia (Chain ID: 84532)
 
 | Contract | Address | Explorer |
 |----------|---------|----------|
-| DepegShieldHook | `0x460f82ffd825C1567E0819BfE8723017632c80C0` | [View](https://sepolia.basescan.org/address/0x460f82ffd825C1567E0819BfE8723017632c80C0) |
-| AlertReceiver | `0x3e627528eB8FE610c3E330f7db76C63F8ABF3FEe` | [View](https://sepolia.basescan.org/address/0x3e627528eB8FE610c3E330f7db76C63F8ABF3FEe) |
+| DepegShieldHook | `0xC8de86D4CA095f343f0E69c3b8f7c9845A2580c0` | [View](https://sepolia.basescan.org/address/0xC8de86D4CA095f343f0E69c3b8f7c9845A2580c0) |
+| AlertReceiver | `0xB25AC436f9BC71Ab36745bF3bC550649e3ec2A48` | [View](https://sepolia.basescan.org/address/0xB25AC436f9BC71Ab36745bF3bC550649e3ec2A48) |
 
 ### Unichain Sepolia (Chain ID: 1301)
 
 | Contract | Address | Explorer |
 |----------|---------|----------|
-| DepegShieldHook | `0xd24636276076261C9462bD763db25bd957Cc80c0` | [View](https://sepolia.uniscan.xyz/address/0xd24636276076261C9462bD763db25bd957Cc80c0) |
-| AlertReceiver | `0x3e627528eB8FE610c3E330f7db76C63F8ABF3FEe` | [View](https://sepolia.uniscan.xyz/address/0x3e627528eB8FE610c3E330f7db76C63F8ABF3FEe) |
+| DepegShieldHook | `0xdd39c05761379AbB059623a303C03f180e4f00c0` | [View](https://sepolia.uniscan.xyz/address/0xdd39c05761379AbB059623a303C03f180e4f00c0) |
+| AlertReceiver | `0xB25AC436f9BC71Ab36745bF3bC550649e3ec2A48` | [View](https://sepolia.uniscan.xyz/address/0xB25AC436f9BC71Ab36745bF3bC550649e3ec2A48) |
 
 ### Reactive Lasna (Chain ID: 5318007)
 
 | Contract | Address | Explorer |
 |----------|---------|----------|
-| ReactiveMonitor | `0x996644D92645985292D57Ae903C14E58e8b6377C` | [View](https://lasna.reactscan.net/address/0x996644D92645985292D57Ae903C14E58e8b6377C) |
+| ReactiveMonitor | `0x583bdf3BCE926E36d84eB93a9fd3867D24E5943C` | [View](https://lasna.reactscan.net/address/0x583bdf3BCE926E36d84eB93a9fd3867D24E5943C) |
 
 ### Pool Configuration
 

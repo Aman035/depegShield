@@ -11,7 +11,8 @@ import { SwapPanel } from "@/components/SwapPanel";
 import { Faucet } from "@/components/Faucet";
 import { SwapEvents } from "@/components/SwapEvents";
 import { PoolLiquidity } from "@/components/PoolLiquidity";
-import { DEPEG_SHIELD_ABI, DYNAMIC_FEE_FLAG, DEFAULT_TICK_SPACING, HOOK_ADDRESSES, TOKEN_ADDRESSES } from "@/config/contracts";
+import { CrossChainAlert } from "@/components/CrossChainAlert";
+import { DEPEG_SHIELD_ABI, DYNAMIC_FEE_FLAG, DEFAULT_TICK_SPACING, HOOK_ADDRESSES, TOKEN_ADDRESSES, CHAIN_NAMES } from "@/config/contracts";
 import { supportedChains } from "@/config/chains";
 import { calculateFee, toBps, getZone, getZoneColor, getZoneLabel, ratioToMultiplier, ZONE1_UPPER } from "@/lib/feeCurve";
 import { EXTSLOAD_ABI, POOL_MANAGER_ADDRESSES, computePoolId, getSlot0Key, getLiquidityKey, parseSlot0, parseLiquidity } from "@/lib/poolState";
@@ -21,13 +22,25 @@ const StarsBackground = dynamic(
   { ssr: false }
 );
 
-const CHAIN_ID = supportedChains[0].id;
+const DEFAULT_CHAIN_ID = supportedChains[0].id;
 
 export default function ExplorePage() {
-  const { isConnected } = useAccount();
+  const { isConnected, chain } = useAccount();
   const [currency0, setCurrency0] = useState<Address>("" as Address);
   const [currency1, setCurrency1] = useState<Address>("" as Address);
   const [isQuerying, setIsQuerying] = useState(false);
+
+  // Use connected chain if it's a supported chain with a hook, otherwise default
+  const CHAIN_ID = chain?.id && HOOK_ADDRESSES[chain.id] ? chain.id : DEFAULT_CHAIN_ID;
+
+  // Reset query state when chain changes so the previous chain's pool doesn't persist
+  const [prevChainId, setPrevChainId] = useState(CHAIN_ID);
+  useEffect(() => {
+    if (CHAIN_ID !== prevChainId) {
+      setPrevChainId(CHAIN_ID);
+      setIsQuerying(false);
+    }
+  }, [CHAIN_ID, prevChainId]);
 
   const hookAddress = HOOK_ADDRESSES[CHAIN_ID];
 
@@ -194,7 +207,7 @@ export default function ExplorePage() {
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--green)]/10 border border-[var(--green)]/20 text-[12px] font-mono text-[var(--green)]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)]" />
-                Testnet
+                {CHAIN_NAMES[CHAIN_ID] ?? "Testnet"}
               </span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--bg-raised)] border border-[var(--border)] text-[12px] font-mono text-[var(--text-dim)]">
                 Mainnet (Coming Soon)
@@ -342,6 +355,9 @@ export default function ExplorePage() {
                 <FeeCurveChart currentRatio={ratio} height={340} />
               </div>
             </div>
+
+            {/* Cross-Chain Shield */}
+            <CrossChainAlert chainId={CHAIN_ID} currency0={sortedCurrency0} currency1={sortedCurrency1} />
 
             {/* Swap + Faucet */}
             {sqrtPriceX96 && liquidity && reservesData && (
