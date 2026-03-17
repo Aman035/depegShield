@@ -23,7 +23,7 @@ contract AlertReceiverTest is Test {
 
     function test_alertReceiver_setAndGet() public {
         vm.prank(callbackSender);
-        receiver.handleAlert(pairAB, 10400, 11155111, 600);
+        receiver.handleAlert(address(0), pairAB, 10400, 11155111, 600);
 
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10400);
         AlertReceiver.Alert memory alert = receiver.getAlert(pairAB);
@@ -34,18 +34,18 @@ contract AlertReceiverTest is Test {
 
     function test_alertReceiver_clearAlert() public {
         vm.prank(callbackSender);
-        receiver.handleAlert(pairAB, 10800, 84532, 600);
+        receiver.handleAlert(address(0), pairAB, 10800, 84532, 600);
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10800);
 
         // Clear by sending ratio <= RATIO_PRECISION
         vm.prank(callbackSender);
-        receiver.handleAlert(pairAB, 10000, 84532, 0);
+        receiver.handleAlert(address(0), pairAB, 10000, 84532, 0);
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 0);
     }
 
     function test_alertReceiver_ttlExpiry() public {
         vm.prank(callbackSender);
-        receiver.handleAlert(pairAB, 10400, 11155111, 300);
+        receiver.handleAlert(address(0), pairAB, 10400, 11155111, 300);
 
         // Before expiry
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10400);
@@ -58,7 +58,7 @@ contract AlertReceiverTest is Test {
     function test_alertReceiver_accessControl() public {
         vm.prank(address(0xDEAD));
         vm.expectRevert("Authorized sender only");
-        receiver.handleAlert(pairAB, 10200, 1301, 600);
+        receiver.handleAlert(address(0), pairAB, 10200, 1301, 600);
     }
 
     function test_alertReceiver_multiplePairs() public {
@@ -66,8 +66,8 @@ contract AlertReceiverTest is Test {
         receiver.registerPair(pairAC, tokenA, tokenC);
 
         vm.startPrank(callbackSender);
-        receiver.handleAlert(pairAB, 10150, 1301, 600);
-        receiver.handleAlert(pairAC, 10800, 84532, 600);
+        receiver.handleAlert(address(0), pairAB, 10150, 1301, 600);
+        receiver.handleAlert(address(0), pairAC, 10800, 84532, 600);
         vm.stopPrank();
 
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10150);
@@ -77,11 +77,11 @@ contract AlertReceiverTest is Test {
     function test_alertReceiver_overwrite() public {
         vm.startPrank(callbackSender);
 
-        receiver.handleAlert(pairAB, 10150, 1301, 600);
+        receiver.handleAlert(address(0), pairAB, 10150, 1301, 600);
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10150);
 
         // Overwrite with higher ratio
-        receiver.handleAlert(pairAB, 10800, 11155111, 300);
+        receiver.handleAlert(address(0), pairAB, 10800, 11155111, 300);
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10800);
 
         AlertReceiver.Alert memory alert = receiver.getAlert(pairAB);
@@ -99,7 +99,7 @@ contract AlertReceiverTest is Test {
     function test_alertReceiver_unregisteredPairReturnsZero() public {
         // Set an alert on pairAB
         vm.prank(callbackSender);
-        receiver.handleAlert(pairAB, 10400, 11155111, 600);
+        receiver.handleAlert(address(0), pairAB, 10400, 11155111, 600);
 
         // Query with unregistered pair (tokenB, tokenC) -- should return 0
         assertEq(receiver.getCrossChainRatio(tokenB, tokenC), 0);
@@ -111,7 +111,7 @@ contract AlertReceiverTest is Test {
 
         // Set alert on pairAC
         vm.prank(callbackSender);
-        receiver.handleAlert(pairAC, 10500, 84532, 600);
+        receiver.handleAlert(address(0), pairAC, 10500, 84532, 600);
 
         // Lookup via token addresses works
         assertEq(receiver.getCrossChainRatio(tokenA, tokenC), 10500);
@@ -125,7 +125,7 @@ contract AlertReceiverTest is Test {
 
         // Set alert only on pairAB
         vm.prank(callbackSender);
-        receiver.handleAlert(pairAB, 10500, 11155111, 600);
+        receiver.handleAlert(address(0), pairAB, 10500, 11155111, 600);
 
         // pairAB should have alert
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10500);
@@ -151,7 +151,7 @@ contract AlertReceiverTest is Test {
 
     function test_alertReceiver_getAlertForTokens() public {
         vm.prank(callbackSender);
-        receiver.handleAlert(pairAB, 10400, 11155111, 600);
+        receiver.handleAlert(address(0), pairAB, 10400, 11155111, 600);
 
         AlertReceiver.Alert memory alert = receiver.getAlertForTokens(tokenA, tokenB);
         assertEq(uint256(alert.sourceRatio), 10400);
@@ -161,18 +161,18 @@ contract AlertReceiverTest is Test {
     function test_alertReceiver_nearBalancedClearsAlert() public {
         // Set a real alert
         vm.prank(callbackSender);
-        receiver.handleAlert(pairAB, 10400, 11155111, 600);
+        receiver.handleAlert(address(0), pairAB, 10400, 11155111, 600);
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10400);
 
         // Ratio 10001 is within CLEAR_THRESHOLD (10050) -- should clear, not store
         vm.prank(callbackSender);
-        receiver.handleAlert(pairAB, 10001, 11155111, 600);
+        receiver.handleAlert(address(0), pairAB, 10001, 11155111, 600);
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 0);
     }
 
     function test_alertReceiver_tokenOrderIndependent() public {
         vm.prank(callbackSender);
-        receiver.handleAlert(pairAB, 10400, 11155111, 600);
+        receiver.handleAlert(address(0), pairAB, 10400, 11155111, 600);
 
         // Both orderings should return same ratio
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10400);

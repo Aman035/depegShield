@@ -11,6 +11,13 @@ import {AbstractReactive} from "reactive-lib/abstract-base/AbstractReactive.sol"
 ///         Alerts are keyed by owner-assigned pairId (e.g. keccak256("USDC/USDT")),
 ///         which is the same across all chains. This avoids the problem of different
 ///         token addresses on different chains.
+///
+///         IMPORTANT: All pool and destination configuration MUST be passed in the
+///         constructor. The Reactive Network's ReactVM creates an isolated copy of
+///         this contract at deployment time. State written by post-deployment external
+///         calls (e.g. addMonitoredPool) only affects the L1 instance -- the RVM
+///         instance never sees it, causing react() to revert. By configuring everything
+///         in the constructor, both L1 and RVM instances share the same initial state.
 contract ReactiveMonitor is AbstractReactive {
     enum PoolType { UNISWAP_V4, UNISWAP_V3, UNISWAP_V2 }
 
@@ -23,6 +30,21 @@ contract ReactiveMonitor is AbstractReactive {
     }
 
     struct Destination {
+        uint256 chainId;
+        address alertReceiver;
+    }
+
+    /// @dev Constructor input for a monitored pool.
+    struct PoolConfig {
+        uint256 chainId;
+        address poolAddr;
+        bytes32 pairId;
+        PoolType poolType;
+        bytes32 poolId;
+    }
+
+    /// @dev Constructor input for a destination.
+    struct DestConfig {
         uint256 chainId;
         address alertReceiver;
     }
@@ -41,9 +63,11 @@ contract ReactiveMonitor is AbstractReactive {
     ///      100000 = 10x imbalance, well past MAX_FEE territory.
     uint256 private constant MAX_RELAY_RATIO = 100_000;
 
-    /// @dev Precomputed selector for AlertReceiver.handleAlert(bytes32,uint256,uint256,uint40)
+    /// @dev Precomputed selector for AlertReceiver.handleAlert(address,bytes32,uint256,uint256,uint40)
+    ///      First param (address) is a placeholder -- Reactive Network replaces the first 32 bytes
+    ///      of the callback payload (after selector) with rvm_id (deployer address).
     bytes4 private constant HANDLE_ALERT_SELECTOR =
-        bytes4(keccak256("handleAlert(bytes32,uint256,uint256,uint40)"));
+        bytes4(keccak256("handleAlert(address,bytes32,uint256,uint256,uint40)"));
 
     // Event topic0 signatures
     uint256 private constant TOPIC_V3_SWAP =
@@ -69,56 +93,43 @@ contract ReactiveMonitor is AbstractReactive {
     event PoolAdded(uint256 chainId, address poolAddr, bytes32 pairId, PoolType poolType);
     event DestinationAdded(uint256 chainId, address alertReceiver);
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner");
-        _;
-    }
-
-    constructor() {
+    /// @notice Deploy with full configuration. All pools and destinations must be provided
+    ///         upfront so the RVM instance has the same state as the L1 instance.
+    /// @param _pools Array of pools to monitor (subscriptions are created automatically).
+    /// @param _destinations Array of destination chains and their AlertReceiver addresses.
+    constructor(PoolConfig[] memory _pools, DestConfig[] memory _destinations) {
         owner = msg.sender;
-    }
 
-    /// @notice Register a pool to monitor on a specific chain.
-    /// @param pairId Owner-assigned pair label (e.g. keccak256("USDC/USDT")).
-    /// @param poolId For UNISWAP_V4: the PoolId to filter events (poolAddr = PoolManager address).
-    ///              For other types: pass bytes32(0), poolAddr is the pool/pair contract itself.
-    function addMonitoredPool(
-        uint256 chainId,
-        address poolAddr,
-        bytes32 pairId,
-        PoolType poolType,
-        bytes32 poolId
-    ) external onlyOwner {
-        bool isNew = pools[poolAddr].poolAddr == address(0);
-        pools[poolAddr] = MonitoredPool(chainId, poolAddr, pairId, poolType, poolId);
-        if (isNew) {
-            poolAddresses.push(poolAddr);
+        // Register pools and subscribe to events
+        for (uint256 i = 0; i < _pools.length; i++) {
+            PoolConfig memory p = _pools[i];
+            pools[p.poolAddr] = MonitoredPool(p.chainId, p.poolAddr, p.pairId, p.poolType, p.poolId);
+            poolAddresses.push(p.poolAddr);
+
+            // Subscribe on L1 only (RVM has no system contract)
+            if (!vm) {
+                uint256 topic0;
+                uint256 topic1 = REACTIVE_IGNORE;
+                if (p.poolType == PoolType.UNISWAP_V4) {
+                    topic0 = TOPIC_V4_SWAP;
+                    topic1 = uint256(p.poolId);
+                } else if (p.poolType == PoolType.UNISWAP_V3) {
+                    topic0 = TOPIC_V3_SWAP;
+                } else {
+                    topic0 = TOPIC_V2_SYNC;
+                }
+                service.subscribe(p.chainId, p.poolAddr, topic0, topic1, REACTIVE_IGNORE, REACTIVE_IGNORE);
+            }
+
+            emit PoolAdded(p.chainId, p.poolAddr, p.pairId, p.poolType);
         }
 
-        // Subscribe to the appropriate event based on pool type
-        uint256 topic0;
-        uint256 topic1 = REACTIVE_IGNORE;
-        if (poolType == PoolType.UNISWAP_V4) {
-            topic0 = TOPIC_V4_SWAP;
-            // V4 emits from singleton PoolManager; filter by PoolId in topic1
-            topic1 = uint256(poolId);
-        } else if (poolType == PoolType.UNISWAP_V3) {
-            topic0 = TOPIC_V3_SWAP;
-        } else {
-            topic0 = TOPIC_V2_SYNC;
+        // Register destinations
+        for (uint256 i = 0; i < _destinations.length; i++) {
+            DestConfig memory d = _destinations[i];
+            destinations.push(Destination(d.chainId, d.alertReceiver));
+            emit DestinationAdded(d.chainId, d.alertReceiver);
         }
-
-        if (!vm) {
-            service.subscribe(chainId, poolAddr, topic0, topic1, REACTIVE_IGNORE, REACTIVE_IGNORE);
-        }
-
-        emit PoolAdded(chainId, poolAddr, pairId, poolType);
-    }
-
-    /// @notice Register a destination chain's AlertReceiver.
-    function addDestination(uint256 chainId, address alertReceiver) external onlyOwner {
-        destinations.push(Destination(chainId, alertReceiver));
-        emit DestinationAdded(chainId, alertReceiver);
     }
 
     /// @notice Entry point called by ReactVM when a subscribed event fires.
@@ -199,6 +210,7 @@ contract ReactiveMonitor is AbstractReactive {
 
         bytes memory payload = abi.encodeWithSelector(
             HANDLE_ALERT_SELECTOR,
+            address(0),   // placeholder: Reactive Network replaces with rvm_id
             pairId,
             ratio,
             sourceChainId,

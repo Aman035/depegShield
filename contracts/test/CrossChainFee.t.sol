@@ -92,7 +92,7 @@ contract CrossChainFeeTest is BaseTest {
         uint256 snapshot = vm.snapshotState();
 
         // Set cross-chain alert via pairId
-        alertReceiver.handleAlert(PAIR_ID, 10300, 11155111, 600);
+        alertReceiver.handleAlert(address(0), PAIR_ID, 10300, 11155111, 600);
         BalanceDelta deltaWithFloor = _swapWorsening(10e18);
 
         vm.revertToState(snapshot);
@@ -114,12 +114,12 @@ contract CrossChainFeeTest is BaseTest {
     function test_crossChainFloor_higherRatioHigherFee() public {
         uint256 snapshot = vm.snapshotState();
 
-        alertReceiver.handleAlert(PAIR_ID, 10200, 84532, 600);
+        alertReceiver.handleAlert(address(0), PAIR_ID, 10200, 84532, 600);
         BalanceDelta deltaModerate = _swapWorsening(10e18);
 
         vm.revertToState(snapshot);
 
-        alertReceiver.handleAlert(PAIR_ID, 10500, 84532, 600);
+        alertReceiver.handleAlert(address(0), PAIR_ID, 10500, 84532, 600);
         BalanceDelta deltaSevere = _swapWorsening(10e18);
 
         uint256 outModerate = uint256(int256(deltaModerate.amount1()));
@@ -142,7 +142,7 @@ contract CrossChainFeeTest is BaseTest {
 
         uint256 snapshot = vm.snapshotState();
 
-        alertReceiver.handleAlert(PAIR_ID, 10100, 11155111, 600);
+        alertReceiver.handleAlert(address(0), PAIR_ID, 10100, 11155111, 600);
         BalanceDelta deltaWithAlert = _swapWorsening(5e18);
 
         vm.revertToState(snapshot);
@@ -162,7 +162,7 @@ contract CrossChainFeeTest is BaseTest {
 
         uint256 snapshot = vm.snapshotState();
 
-        alertReceiver.handleAlert(PAIR_ID, 10500, 11155111, 600);
+        alertReceiver.handleAlert(address(0), PAIR_ID, 10500, 11155111, 600);
         BalanceDelta deltaRebal = _swapRebalancing(5e18);
 
         vm.revertToState(snapshot);
@@ -178,7 +178,7 @@ contract CrossChainFeeTest is BaseTest {
     // Test: Fee capped at MAX_FEE even with extreme cross-chain ratio
     // ==========================================
     function test_crossChainFloor_feeCapAtMaxFee() public {
-        alertReceiver.handleAlert(PAIR_ID, 20000, 84532, 600);
+        alertReceiver.handleAlert(address(0), PAIR_ID, 20000, 84532, 600);
 
         BalanceDelta delta = swapRouter.swapExactTokensForTokens({
             amountIn: 1e18, amountOutMin: 0, zeroForOne: true,
@@ -222,7 +222,7 @@ contract CrossChainFeeTest is BaseTest {
     // Test: Expired alert returns to normal fee
     // ==========================================
     function test_crossChainFloor_expiredAlertNormalFee() public {
-        alertReceiver.handleAlert(PAIR_ID, 10500, 11155111, 100);
+        alertReceiver.handleAlert(address(0), PAIR_ID, 10500, 11155111, 100);
 
         uint256 snapshot = vm.snapshotState();
 
@@ -246,7 +246,7 @@ contract CrossChainFeeTest is BaseTest {
         uint24 expectedFee = FeeCurve.calculateFee(10300);
         console.log("Expected cross-chain fee for ratio 10300:", expectedFee);
 
-        alertReceiver.handleAlert(PAIR_ID, 10300, 11155111, 600);
+        alertReceiver.handleAlert(address(0), PAIR_ID, 10300, 11155111, 600);
 
         vm.recordLogs();
         _swapWorsening(10e18);
@@ -287,7 +287,7 @@ contract CrossChainFeeTest is BaseTest {
         positionManager.mint(poolKeyB, tickLower, tickUpper, liq, a0 + 1, a1 + 1, address(this), block.timestamp, Constants.ZERO_BYTES);
 
         // Set alert on PAIR_ID (pair A) -- pair B should NOT be affected
-        alertReceiver.handleAlert(PAIR_ID, 10500, 11155111, 600);
+        alertReceiver.handleAlert(address(0), PAIR_ID, 10500, 11155111, 600);
 
         uint256 snapshot = vm.snapshotState();
 

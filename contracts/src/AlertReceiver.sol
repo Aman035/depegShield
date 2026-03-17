@@ -65,12 +65,15 @@ contract AlertReceiver is AbstractCallback, IAlertReceiver {
     }
 
     /// @notice Called by ReactVM via callback proxy to set or clear an alert.
+    /// @param /* rvmId */ First 32 bytes are replaced by Reactive Network with the deployer
+    ///        address (rvm_id). This parameter absorbs that injection so subsequent args are correct.
     /// @param pairId The pair identifier (owner-assigned, from ReactiveMonitor).
     /// @param sourceRatio The imbalance ratio on the source chain (10000 = balanced).
     ///        Values <= RATIO_PRECISION clear the alert.
     /// @param sourceChainId The chain where the depeg was detected.
     /// @param ttl Time-to-live in seconds. Alert expires after timestamp + ttl.
     function handleAlert(
+        address /* rvmId */,
         bytes32 pairId,
         uint256 sourceRatio,
         uint256 sourceChainId,
