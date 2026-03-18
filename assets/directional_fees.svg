@@ -1,4 +1,98 @@
 <svg width="100%" viewBox="0 0 680 310" xmlns="http://www.w3.org/2000/svg">
+<style>
+  @keyframes pulse-green {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+  @keyframes pulse-red {
+    0%, 100% { opacity: 0.15; }
+    50% { opacity: 0.7; }
+  }
+  @keyframes arrow-slide-a-left {
+    0% { opacity: 0; transform: translateX(-20px); }
+    20%, 100% { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes arrow-slide-b-left {
+    0%, 10% { opacity: 0; transform: translateX(-20px); }
+    30%, 100% { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes arrow-slide-a-right {
+    0%, 20% { opacity: 0; transform: translateX(-20px); }
+    45%, 100% { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes arrow-slide-b-right {
+    0%, 30% { opacity: 0; transform: translateX(-20px); }
+    55%, 100% { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes badge-pop-a-left {
+    0%, 15% { opacity: 0; transform: scale(0.7); }
+    25%, 100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes badge-pop-b-left {
+    0%, 25% { opacity: 0; transform: scale(0.7); }
+    35%, 100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes badge-pop-worsen {
+    0%, 40% { opacity: 0; transform: scale(0.7); }
+    55%, 100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes badge-pop-rebal {
+    0%, 50% { opacity: 0; transform: scale(0.7); }
+    65%, 100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes caption-fade-left {
+    0%, 30% { opacity: 0; }
+    45%, 100% { opacity: 1; }
+  }
+  @keyframes caption-fade-right {
+    0%, 60% { opacity: 0; }
+    75%, 100% { opacity: 1; }
+  }
+  @keyframes legend-fade {
+    0%, 70% { opacity: 0; }
+    85%, 100% { opacity: 1; }
+  }
+  @keyframes dot-travel-left {
+    0% { transform: translateX(0); opacity: 0; }
+    5% { opacity: 0.8; }
+    90% { opacity: 0.8; }
+    100% { transform: translateX(48px); opacity: 0; }
+  }
+  @keyframes dot-travel-red {
+    0% { transform: translateX(0); opacity: 0; }
+    5% { opacity: 0.9; }
+    90% { opacity: 0.9; }
+    100% { transform: translateX(45px); opacity: 0; }
+  }
+  @keyframes dot-travel-green {
+    0% { transform: translateX(0); opacity: 0; }
+    5% { opacity: 0.9; }
+    90% { opacity: 0.9; }
+    100% { transform: translateX(45px); opacity: 0; }
+  }
+  .green-glow { animation: pulse-green 2.5s ease-in-out infinite; }
+  .red-glow { animation: pulse-red 2s ease-in-out infinite; }
+  .arrow-a-left { animation: arrow-slide-a-left 5s ease-out infinite; }
+  .arrow-b-left { animation: arrow-slide-b-left 5s ease-out infinite; }
+  .arrow-a-right { animation: arrow-slide-a-right 5s ease-out infinite; }
+  .arrow-b-right { animation: arrow-slide-b-right 5s ease-out infinite; }
+  .badge-a-left { animation: badge-pop-a-left 5s ease-out infinite; }
+  .badge-b-left { animation: badge-pop-b-left 5s ease-out infinite; }
+  .badge-worsen { animation: badge-pop-worsen 5s ease-out infinite; }
+  .badge-rebal { animation: badge-pop-rebal 5s ease-out infinite; }
+  .cap-left { animation: caption-fade-left 5s ease-out infinite; }
+  .cap-right { animation: caption-fade-right 5s ease-out infinite; }
+  .legend-in { animation: legend-fade 5s ease-out infinite; }
+  .dot-left-1 { animation: dot-travel-left 1.8s linear infinite; }
+  .dot-left-2 { animation: dot-travel-left 1.8s linear 0.6s infinite; }
+  .dot-left-3 { animation: dot-travel-left 1.8s linear 1.2s infinite; }
+  .dot-red-1 { animation: dot-travel-red 1.6s linear infinite; }
+  .dot-red-2 { animation: dot-travel-red 1.6s linear 0.55s infinite; }
+  .dot-red-3 { animation: dot-travel-red 1.6s linear 1.1s infinite; }
+  .dot-green-1 { animation: dot-travel-green 1.6s linear 0.2s infinite; }
+  .dot-green-2 { animation: dot-travel-green 1.6s linear 0.75s infinite; }
+  .dot-green-3 { animation: dot-travel-green 1.6s linear 1.3s infinite; }
+</style>
 
 <!-- ==================== LEFT SIDE: Balanced Pool ==================== -->
 
@@ -11,35 +105,52 @@
 <text x="170" y="114" text-anchor="middle" fill="rgb(211,209,199)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="14" font-weight="500">Pool</text>
 <text x="170" y="134" text-anchor="middle" fill="rgb(180,178,169)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="12" font-weight="400">50% / 50%</text>
 
-<!-- Green status dot -->
-<circle cx="226" cy="98" r="5" fill="rgb(93,202,165)" opacity="0.7"/>
+<!-- Green status dot (pulsing) -->
+<circle cx="226" cy="98" r="8" fill="rgb(93,202,165)" class="green-glow"/>
+<circle cx="226" cy="98" r="4" fill="rgb(93,202,165)"/>
 
-<!-- tokenA label + tag -->
+<!-- tokenA label -->
 <text x="10" y="100" text-anchor="start" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="400">tokenA</text>
-<!-- tokenA arrow line + arrowhead -->
-<line x1="42" y1="104" x2="90" y2="104" stroke="rgb(180,178,169)" stroke-width="1.5"/>
-<polygon points="96,104 88,100 88,108" fill="rgb(180,178,169)"/>
+<!-- tokenA arrow (animated slide-in) -->
+<g class="arrow-a-left">
+  <line x1="42" y1="104" x2="90" y2="104" stroke="rgb(180,178,169)" stroke-width="1.5"/>
+  <polygon points="96,104 88,100 88,108" fill="rgb(180,178,169)"/>
+</g>
+<!-- tokenA traveling dots -->
+<circle cx="42" cy="104" r="2.5" fill="rgb(180,178,169)" class="dot-left-1"/>
+<circle cx="42" cy="104" r="2.5" fill="rgb(180,178,169)" class="dot-left-2"/>
+<circle cx="42" cy="104" r="2.5" fill="rgb(180,178,169)" class="dot-left-3"/>
 
-<!-- tokenA fee badge -->
-<rect x="56" y="82" width="32" height="16" rx="4" fill="rgb(68,68,65)" stroke="rgb(180,178,169)" stroke-width="0.5"/>
-<text x="72" y="93" text-anchor="middle" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="10" font-weight="500">1bp</text>
+<!-- tokenA fee badge (pop-in) -->
+<g class="badge-a-left">
+  <rect x="56" y="82" width="32" height="16" rx="4" fill="rgb(68,68,65)" stroke="rgb(180,178,169)" stroke-width="0.5"/>
+  <text x="72" y="93" text-anchor="middle" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="10" font-weight="500">1bp</text>
+</g>
 
 <!-- tokenB label -->
 <text x="10" y="142" text-anchor="start" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="400">tokenB</text>
-<!-- tokenB arrow line + arrowhead -->
-<line x1="42" y1="138" x2="90" y2="138" stroke="rgb(180,178,169)" stroke-width="1.5"/>
-<polygon points="96,138 88,134 88,142" fill="rgb(180,178,169)"/>
+<!-- tokenB arrow (animated slide-in) -->
+<g class="arrow-b-left">
+  <line x1="42" y1="138" x2="90" y2="138" stroke="rgb(180,178,169)" stroke-width="1.5"/>
+  <polygon points="96,138 88,134 88,142" fill="rgb(180,178,169)"/>
+</g>
+<!-- tokenB traveling dots -->
+<circle cx="42" cy="138" r="2.5" fill="rgb(180,178,169)" class="dot-left-1"/>
+<circle cx="42" cy="138" r="2.5" fill="rgb(180,178,169)" class="dot-left-2"/>
+<circle cx="42" cy="138" r="2.5" fill="rgb(180,178,169)" class="dot-left-3"/>
 
-<!-- tokenB fee badge -->
-<rect x="56" y="116" width="32" height="16" rx="4" fill="rgb(68,68,65)" stroke="rgb(180,178,169)" stroke-width="0.5"/>
-<text x="72" y="127" text-anchor="middle" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="10" font-weight="500">1bp</text>
+<!-- tokenB fee badge (pop-in) -->
+<g class="badge-b-left">
+  <rect x="56" y="116" width="32" height="16" rx="4" fill="rgb(68,68,65)" stroke="rgb(180,178,169)" stroke-width="0.5"/>
+  <text x="72" y="127" text-anchor="middle" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="10" font-weight="500">1bp</text>
+</g>
 
 <!-- Balance indicator bar -->
 <rect x="120" y="164" width="50" height="6" rx="3" fill="rgb(93,202,165)" opacity="0.7"/>
 <rect x="170" y="164" width="50" height="6" rx="3" fill="rgb(93,202,165)" opacity="0.7"/>
 
-<!-- Caption -->
-<text x="170" y="192" text-anchor="middle" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="400">Both directions pay the same flat fee</text>
+<!-- Caption (fade-in) -->
+<text x="170" y="192" text-anchor="middle" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="400" class="cap-left">Both directions pay the same flat fee</text>
 
 <!-- ==================== DIVIDER ==================== -->
 <line x1="340" y1="20" x2="340" y2="210" stroke="rgb(68,68,65)" stroke-width="0.5" stroke-dasharray="4 4"/>
@@ -59,54 +170,72 @@
 <text x="510" y="114" text-anchor="middle" fill="rgb(211,209,199)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="14" font-weight="500">Pool</text>
 <text x="510" y="134" text-anchor="middle" fill="rgb(180,178,169)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="12" font-weight="400">65% / 35%</text>
 
-<!-- Warning dot on pool -->
-<circle cx="566" cy="98" r="8" fill="rgb(226,75,74)" opacity="0.15"/>
-<circle cx="566" cy="98" r="5" fill="rgb(226,75,74)" opacity="0.7"/>
+<!-- Warning dot (pulsing) -->
+<circle cx="566" cy="98" r="10" fill="rgb(226,75,74)" class="red-glow"/>
+<circle cx="566" cy="98" r="4" fill="rgb(226,75,74)"/>
 
 <!-- tokenA label (excess) -->
 <text x="354" y="94" text-anchor="start" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="400">tokenA</text>
 <text x="354" y="108" text-anchor="start" fill="rgb(226,75,74)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="9" font-weight="500">(excess)</text>
-<!-- tokenA arrow line + arrowhead (red) -->
-<line x1="385" y1="104" x2="430" y2="104" stroke="rgb(226,75,74)" stroke-width="1.5"/>
-<polygon points="436,104 428,100 428,108" fill="rgb(226,75,74)"/>
+<!-- tokenA arrow (animated slide-in, red) -->
+<g class="arrow-a-right">
+  <line x1="385" y1="104" x2="430" y2="104" stroke="rgb(226,75,74)" stroke-width="1.5"/>
+  <polygon points="436,104 428,100 428,108" fill="rgb(226,75,74)"/>
+</g>
+<!-- tokenA traveling dots (red) -->
+<circle cx="385" cy="104" r="2.5" fill="rgb(226,75,74)" class="dot-red-1"/>
+<circle cx="385" cy="104" r="2.5" fill="rgb(226,75,74)" class="dot-red-2"/>
+<circle cx="385" cy="104" r="2.5" fill="rgb(226,75,74)" class="dot-red-3"/>
 
-<!-- worsening label + fee badge -->
-<text x="420" y="64" text-anchor="middle" fill="rgb(240,153,123)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="10" font-weight="500">worsening</text>
-<rect x="392" y="72" width="56" height="22" rx="4" fill="rgb(113,43,19)" stroke="rgb(240,153,123)" stroke-width="0.5"/>
-<text x="420" y="86" text-anchor="middle" fill="rgb(226,75,74)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="600">50-200bp+</text>
+<!-- worsening label + fee badge (pop-in) -->
+<g class="badge-worsen">
+  <text x="420" y="64" text-anchor="middle" fill="rgb(240,153,123)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="10" font-weight="500">worsening</text>
+  <rect x="392" y="72" width="56" height="22" rx="4" fill="rgb(113,43,19)" stroke="rgb(240,153,123)" stroke-width="0.5"/>
+  <text x="420" y="86" text-anchor="middle" fill="rgb(226,75,74)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="600">50-200bp+</text>
+</g>
 
 <!-- tokenB label (scarce) -->
 <text x="354" y="136" text-anchor="start" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="400">tokenB</text>
 <text x="354" y="150" text-anchor="start" fill="rgb(93,202,165)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="9" font-weight="500">(scarce)</text>
-<!-- tokenB arrow line + arrowhead (green) -->
-<line x1="385" y1="138" x2="430" y2="138" stroke="rgb(93,202,165)" stroke-width="1.5"/>
-<polygon points="436,138 428,134 428,142" fill="rgb(93,202,165)"/>
+<!-- tokenB arrow (animated slide-in, green) -->
+<g class="arrow-b-right">
+  <line x1="385" y1="138" x2="430" y2="138" stroke="rgb(93,202,165)" stroke-width="1.5"/>
+  <polygon points="436,138 428,134 428,142" fill="rgb(93,202,165)"/>
+</g>
+<!-- tokenB traveling dots (green) -->
+<circle cx="385" cy="138" r="2.5" fill="rgb(93,202,165)" class="dot-green-1"/>
+<circle cx="385" cy="138" r="2.5" fill="rgb(93,202,165)" class="dot-green-2"/>
+<circle cx="385" cy="138" r="2.5" fill="rgb(93,202,165)" class="dot-green-3"/>
 
-<!-- rebalancing label + fee badge -->
-<rect x="404" y="148" width="32" height="20" rx="4" fill="rgb(8,80,65)" stroke="rgb(93,202,165)" stroke-width="0.5"/>
-<text x="420" y="162" text-anchor="middle" fill="rgb(93,202,165)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="600">0bp</text>
-<text x="420" y="180" text-anchor="middle" fill="rgb(93,202,165)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="10" font-weight="500">rebalancing</text>
+<!-- rebalancing label + fee badge (pop-in) -->
+<g class="badge-rebal">
+  <rect x="404" y="148" width="32" height="20" rx="4" fill="rgb(8,80,65)" stroke="rgb(93,202,165)" stroke-width="0.5"/>
+  <text x="420" y="162" text-anchor="middle" fill="rgb(93,202,165)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="600">0bp</text>
+  <text x="420" y="180" text-anchor="middle" fill="rgb(93,202,165)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="10" font-weight="500">rebalancing</text>
+</g>
 
 <!-- Imbalance indicator bar (skewed) -->
 <rect x="462" y="164" width="65" height="6" rx="3" fill="rgb(226,75,74)" opacity="0.7"/>
 <rect x="527" y="164" width="35" height="6" rx="3" fill="rgb(93,202,165)" opacity="0.5"/>
 
-<!-- Caption -->
-<text x="510" y="192" text-anchor="middle" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="400">Fee depends on swap direction</text>
+<!-- Caption (fade-in, delayed) -->
+<text x="510" y="192" text-anchor="middle" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="400" class="cap-right">Fee depends on swap direction</text>
 
-<!-- ==================== LEGEND ==================== -->
-<rect x="118" y="222" width="444" height="72" rx="8" fill="rgb(38,38,36)" stroke="rgb(68,68,65)" stroke-width="0.5"/>
+<!-- ==================== LEGEND (fade-in) ==================== -->
+<g class="legend-in">
+  <rect x="118" y="222" width="444" height="72" rx="8" fill="rgb(38,38,36)" stroke="rgb(68,68,65)" stroke-width="0.5"/>
 
-<!-- Worsening legend -->
-<rect x="140" y="238" width="10" height="10" rx="2" fill="rgb(113,43,19)" stroke="rgb(240,153,123)" stroke-width="0.5"/>
-<text x="156" y="248" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="400">Worsening: selling excess token into pool, escalated fee (1-500bp)</text>
+  <!-- Worsening legend -->
+  <rect x="140" y="238" width="10" height="10" rx="2" fill="rgb(113,43,19)" stroke="rgb(240,153,123)" stroke-width="0.5"/>
+  <text x="156" y="248" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="400">Worsening: selling excess token into pool, escalated fee (1-500bp)</text>
 
-<!-- Rebalancing legend -->
-<rect x="140" y="258" width="10" height="10" rx="2" fill="rgb(8,80,65)" stroke="rgb(93,202,165)" stroke-width="0.5"/>
-<text x="156" y="268" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="400">Rebalancing: selling scarce token into pool, zero fee (incentivizes recovery)</text>
+  <!-- Rebalancing legend -->
+  <rect x="140" y="258" width="10" height="10" rx="2" fill="rgb(8,80,65)" stroke="rgb(93,202,165)" stroke-width="0.5"/>
+  <text x="156" y="268" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="400">Rebalancing: selling scarce token into pool, zero fee (incentivizes recovery)</text>
 
-<!-- Neutral legend -->
-<rect x="140" y="278" width="10" height="10" rx="2" fill="rgb(68,68,65)" stroke="rgb(180,178,169)" stroke-width="0.5"/>
-<text x="156" y="288" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="400">Balanced: all swaps pay flat 1bp base fee</text>
+  <!-- Neutral legend -->
+  <rect x="140" y="278" width="10" height="10" rx="2" fill="rgb(68,68,65)" stroke="rgb(180,178,169)" stroke-width="0.5"/>
+  <text x="156" y="288" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="400">Balanced: all swaps pay flat 1bp base fee</text>
+</g>
 
 </svg>

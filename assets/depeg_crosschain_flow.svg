@@ -1,4 +1,83 @@
 <svg width="100%" viewBox="0 0 680 503" xmlns="http://www.w3.org/2000/svg">
+<style>
+  @keyframes pulse-red {
+    0%, 100% { opacity: 0.1; }
+    50% { opacity: 0.6; }
+  }
+  @keyframes pulse-purple {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+  @keyframes flow-down {
+    from { stroke-dashoffset: 0; }
+    to { stroke-dashoffset: -16; }
+  }
+  @keyframes flow-diag-monitor {
+    from { stroke-dashoffset: 0; }
+    to { stroke-dashoffset: -20; }
+  }
+  @keyframes flow-diag-uni {
+    from { stroke-dashoffset: 0; }
+    to { stroke-dashoffset: -20; }
+  }
+  @keyframes flow-diag-base {
+    from { stroke-dashoffset: 0; }
+    to { stroke-dashoffset: -20; }
+  }
+  @keyframes dot-to-monitor {
+    0% { transform: translate(0px, 0px); opacity: 0; }
+    5% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translate(57px, 43px); opacity: 0; }
+  }
+  @keyframes dot-to-uni {
+    0% { transform: translate(0px, 0px); opacity: 0; }
+    5% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translate(57px, -50px); opacity: 0; }
+  }
+  @keyframes dot-to-base {
+    0% { transform: translate(0px, 0px); opacity: 0; }
+    5% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translate(57px, 83px); opacity: 0; }
+  }
+  @keyframes hook-activate {
+    0%, 60% { opacity: 0.3; }
+    70%, 100% { opacity: 1; }
+  }
+  @keyframes shield-glow {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+  }
+  @keyframes depeg-flash {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+  @keyframes network-pulse {
+    0%, 100% { stroke-opacity: 0.3; }
+    50% { stroke-opacity: 0.8; }
+  }
+  .red-glow { animation: pulse-red 2s ease-in-out infinite; }
+  .purple-glow { animation: pulse-purple 3s ease-in-out infinite; }
+  .flow-depeg { animation: flow-down 0.6s linear infinite; }
+  .flow-to-reactive { animation: flow-diag-monitor 0.7s linear infinite; }
+  .flow-to-uni { animation: flow-diag-uni 0.7s linear 0.3s infinite; }
+  .flow-to-base { animation: flow-diag-base 0.7s linear 0.5s infinite; }
+  .dot-monitor-1 { animation: dot-to-monitor 2s ease-in-out infinite; }
+  .dot-monitor-2 { animation: dot-to-monitor 2s ease-in-out 0.7s infinite; }
+  .dot-monitor-3 { animation: dot-to-monitor 2s ease-in-out 1.4s infinite; }
+  .dot-uni-1 { animation: dot-to-uni 1.8s ease-in-out 0.2s infinite; }
+  .dot-uni-2 { animation: dot-to-uni 1.8s ease-in-out 0.8s infinite; }
+  .dot-uni-3 { animation: dot-to-uni 1.8s ease-in-out 1.4s infinite; }
+  .dot-base-1 { animation: dot-to-base 1.8s ease-in-out 0.4s infinite; }
+  .dot-base-2 { animation: dot-to-base 1.8s ease-in-out 1.0s infinite; }
+  .dot-base-3 { animation: dot-to-base 1.8s ease-in-out 1.6s infinite; }
+  .hook-fade { animation: hook-activate 4s ease-in-out infinite; }
+  .shield-glow { animation: shield-glow 2s ease-in-out infinite; }
+  .depeg-text { animation: depeg-flash 1.5s ease-in-out infinite; }
+  .net-border { animation: network-pulse 3s ease-in-out infinite; }
+</style>
 
 <!-- ETHEREUM (left) -->
 <text x="112" y="42" text-anchor="middle" fill="rgb(250,249,245)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="14" font-weight="500">Ethereum</text>
@@ -7,29 +86,35 @@
 <text x="112" y="78" text-anchor="middle" fill="rgb(159,225,203)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="14" font-weight="500">USDC/USDT pool</text>
 <text x="112" y="96" text-anchor="middle" fill="rgb(93,202,165)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="12" font-weight="400">imbalance 67%</text>
 
-<!-- Warning dot -->
-<circle cx="180" cy="82" r="8" fill="rgb(226,75,74)" opacity="0.09"/>
-<circle cx="180" cy="82" r="5" fill="rgb(226,75,74)" opacity="0.67"/>
+<!-- Warning dot (pulsing) -->
+<circle cx="180" cy="82" r="12" fill="rgb(226,75,74)" class="red-glow"/>
+<circle cx="180" cy="82" r="5" fill="rgb(226,75,74)" opacity="0.8"/>
 
-<!-- Pool to Monitor arrow (vertical down, red) -->
-<line x1="112" y1="108" x2="112" y2="142" stroke="rgb(226,75,74)" stroke-width="1.5"/>
+<!-- Pool to Monitor arrow (vertical down, red, animated dashes) -->
+<line x1="112" y1="108" x2="112" y2="142" stroke="rgb(226,75,74)" stroke-width="1.5" stroke-dasharray="4,4" class="flow-depeg"/>
 <polygon points="112,148 108,140 116,140" fill="rgb(226,75,74)"/>
-<text x="120" y="132" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="12" font-weight="400" opacity="0.81">depeg!</text>
+<text x="128" y="132" fill="rgb(226,75,74)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="11" font-weight="500" class="depeg-text">depeg!</text>
 
 <!-- ReactiveMonitor -->
 <rect x="44" y="148" width="136" height="52" rx="8" fill="rgb(60,52,137)" stroke="rgb(175,169,236)" stroke-width="0.5"/>
 <text x="112" y="170" text-anchor="middle" fill="rgb(206,203,246)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="14" font-weight="500">ReactiveMonitor</text>
 <text x="112" y="188" text-anchor="middle" fill="rgb(175,169,236)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="12" font-weight="400">decodes swap event</text>
 
+<!-- Purple scanner glow on monitor -->
+<circle cx="50" cy="155" r="6" fill="rgb(175,169,236)" class="purple-glow"/>
+
 <!-- REACTIVE NETWORK (center) -->
-<rect x="244" y="190" width="192" height="64" rx="10" fill="rgb(68,68,65)" stroke="rgb(180,178,169)" stroke-width="0.5"/>
+<rect x="244" y="190" width="192" height="64" rx="10" fill="rgb(68,68,65)" stroke="rgb(180,178,169)" stroke-width="1" class="net-border"/>
 <text x="340" y="216" text-anchor="middle" fill="rgb(211,209,199)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="14" font-weight="500">Reactive Network</text>
 <text x="340" y="236" text-anchor="middle" fill="rgb(180,178,169)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="12" font-weight="400">cross-chain message relay</text>
 
-<!-- Monitor to Reactive arrow (diagonal right-down, purple dashed) -->
-<!-- Direction: (64, 48), normalized: (0.8, 0.6) -->
-<path d="M180 174 L237 217" fill="none" stroke="rgb(83,74,183)" stroke-width="1.5" stroke-dasharray="5,5"/>
+<!-- Monitor to Reactive arrow (diagonal, purple dashed, animated) -->
+<path d="M180 174 L237 217" fill="none" stroke="rgb(83,74,183)" stroke-width="1.5" stroke-dasharray="6,4" class="flow-to-reactive"/>
 <polygon points="244,222 235,220 239,214" fill="rgb(83,74,183)"/>
+<!-- Traveling dots: monitor to reactive -->
+<circle cx="180" cy="174" r="3" fill="rgb(175,169,236)" class="dot-monitor-1"/>
+<circle cx="180" cy="174" r="3" fill="rgb(175,169,236)" class="dot-monitor-2"/>
+<circle cx="180" cy="174" r="3" fill="rgb(175,169,236)" class="dot-monitor-3"/>
 
 <!-- UNICHAIN (right top) -->
 <text x="568" y="116" text-anchor="middle" fill="rgb(250,249,245)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="14" font-weight="500">Unichain</text>
@@ -38,10 +123,13 @@
 <text x="568" y="150" text-anchor="middle" fill="rgb(245,196,179)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="14" font-weight="500">AlertReceiver</text>
 <text x="568" y="168" text-anchor="middle" fill="rgb(240,153,123)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="12" font-weight="400">applies fee floor</text>
 
-<!-- Reactive to Unichain arrow (diagonal right-up, orange dashed) -->
-<!-- Direction: (64, -56), normalized: (0.75, -0.66) -->
-<path d="M436 210 L493 160" fill="none" stroke="rgb(216,90,48)" stroke-width="1.5" stroke-dasharray="5,5"/>
+<!-- Reactive to Unichain arrow (diagonal, orange dashed, animated) -->
+<path d="M436 210 L493 160" fill="none" stroke="rgb(216,90,48)" stroke-width="1.5" stroke-dasharray="6,4" class="flow-to-uni"/>
 <polygon points="500,154 492,157 494,163" fill="rgb(216,90,48)"/>
+<!-- Traveling dots: reactive to unichain -->
+<circle cx="436" cy="210" r="3" fill="rgb(240,153,123)" class="dot-uni-1"/>
+<circle cx="436" cy="210" r="3" fill="rgb(240,153,123)" class="dot-uni-2"/>
+<circle cx="436" cy="210" r="3" fill="rgb(240,153,123)" class="dot-uni-3"/>
 
 <!-- BASE (right bottom) -->
 <text x="568" y="286" text-anchor="middle" fill="rgb(250,249,245)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="14" font-weight="500">Base</text>
@@ -50,23 +138,34 @@
 <text x="568" y="320" text-anchor="middle" fill="rgb(245,196,179)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="14" font-weight="500">AlertReceiver</text>
 <text x="568" y="338" text-anchor="middle" fill="rgb(240,153,123)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="12" font-weight="400">applies fee floor</text>
 
-<!-- Reactive to Base arrow (diagonal right-down, orange dashed) -->
-<!-- Direction: (64, 90), normalized: (0.58, 0.82) -->
-<path d="M436 232 L493 312" fill="none" stroke="rgb(216,90,48)" stroke-width="1.5" stroke-dasharray="5,5"/>
+<!-- Reactive to Base arrow (diagonal, orange dashed, animated) -->
+<path d="M436 232 L493 312" fill="none" stroke="rgb(216,90,48)" stroke-width="1.5" stroke-dasharray="6,4" class="flow-to-base"/>
 <polygon points="500,322 492,317 497,312" fill="rgb(216,90,48)"/>
+<!-- Traveling dots: reactive to base -->
+<circle cx="436" cy="232" r="3" fill="rgb(240,153,123)" class="dot-base-1"/>
+<circle cx="436" cy="232" r="3" fill="rgb(240,153,123)" class="dot-base-2"/>
+<circle cx="436" cy="232" r="3" fill="rgb(240,153,123)" class="dot-base-3"/>
 
 <!-- Hook results (Unichain) -->
-<rect x="500" y="200" width="136" height="44" rx="8" fill="rgb(8,80,65)" stroke="rgb(93,202,165)" stroke-width="0.5"/>
-<text x="568" y="220" text-anchor="middle" fill="rgb(159,225,203)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="14" font-weight="500">DepegShield hook</text>
-<text x="568" y="236" text-anchor="middle" fill="rgb(93,202,165)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="12" font-weight="400">fee curve active</text>
+<g class="hook-fade">
+  <rect x="500" y="200" width="136" height="44" rx="8" fill="rgb(8,80,65)" stroke="rgb(93,202,165)" stroke-width="0.5"/>
+  <text x="568" y="220" text-anchor="middle" fill="rgb(159,225,203)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="14" font-weight="500">DepegShield hook</text>
+  <text x="568" y="236" text-anchor="middle" fill="rgb(93,202,165)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="12" font-weight="400">fee curve active</text>
+</g>
+<!-- Shield glow (Unichain) -->
+<circle cx="500" cy="222" r="6" fill="rgb(93,202,165)" class="shield-glow"/>
 <!-- Arrow AlertReceiver to Hook (vertical down, green) -->
 <line x1="568" y1="180" x2="568" y2="194" stroke="rgb(15,110,86)" stroke-width="1"/>
 <polygon points="568,200 565,193 571,193" fill="rgb(15,110,86)"/>
 
 <!-- Hook results (Base) -->
-<rect x="500" y="370" width="136" height="44" rx="8" fill="rgb(8,80,65)" stroke="rgb(93,202,165)" stroke-width="0.5"/>
-<text x="568" y="390" text-anchor="middle" fill="rgb(159,225,203)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="14" font-weight="500">DepegShield hook</text>
-<text x="568" y="406" text-anchor="middle" fill="rgb(93,202,165)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="12" font-weight="400">fee curve active</text>
+<g class="hook-fade">
+  <rect x="500" y="370" width="136" height="44" rx="8" fill="rgb(8,80,65)" stroke="rgb(93,202,165)" stroke-width="0.5"/>
+  <text x="568" y="390" text-anchor="middle" fill="rgb(159,225,203)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="14" font-weight="500">DepegShield hook</text>
+  <text x="568" y="406" text-anchor="middle" fill="rgb(93,202,165)" font-family="'Anthropic Sans',-apple-system,system-ui,'Segoe UI',sans-serif" font-size="12" font-weight="400">fee curve active</text>
+</g>
+<!-- Shield glow (Base) -->
+<circle cx="500" cy="392" r="6" fill="rgb(93,202,165)" class="shield-glow"/>
 <!-- Arrow AlertReceiver to Hook (vertical down, green) -->
 <line x1="568" y1="350" x2="568" y2="364" stroke="rgb(15,110,86)" stroke-width="1"/>
 <polygon points="568,370 565,363 571,363" fill="rgb(15,110,86)"/>

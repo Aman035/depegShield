@@ -24,6 +24,10 @@ Stablecoin pools on Uniswap v3/v4 charge flat fees regardless of market conditio
 
 **4. Depegs spread cross-chain; pools on other chains are completely blind.** Stablecoins trade on dozens of chains, but a depeg surfaces first where volume is highest (usually Ethereum mainnet). Pools on L2s and alt-chains see nothing -- their local reserves still look perfectly balanced. Cross-chain arbitrageurs exploit this information lag: bridge the depegging token over, drain the scarce "safe" token at near-par prices, and exit before anyone notices. Chain after chain gets picked off in sequence. During the SVB/USDC crisis, Ethereum pools were pricing USDC at \$0.87 while L2 pools were still happily trading it at \$1.
 
+<p align="center">
+  <img src="assets/crosschain_contagion.svg" alt="Cross-chain contagion: Ethereum pool depegs to $0.87 while Base and Unichain pools are blind, still trading at $1.00. Arbitrageurs bridge depegging USDC to drain safe USDT from each chain in sequence." width="680" />
+</p>
+
 **The result:** LPs are involuntary insurance underwriters with no information edge, providing exit liquidity to panicking traders and cross-chain arbitrageurs at maximum downside for near-zero compensation.
 
 ---
