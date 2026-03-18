@@ -2,6 +2,7 @@
 
 ### The first Uniswap v4 hook that shields LPs across every chain
 
+---
 
 ## The Problem
 
@@ -37,6 +38,7 @@ This is not hypothetical. During the SVB/USDC event in March 2023, DEX pools on 
 
 **The result:** LPs in stablecoin pools are involuntary insurance underwriters with no information edge. They provide exit liquidity to panicking traders and cross-chain arbitrageurs at the exact moment they face maximum downside, compensated with effectively nothing. The expected value of providing liquidity through a depeg event is negative.
 
+---
 
 ## The Solution
 
@@ -123,6 +125,7 @@ The full decision path for every swap, from initiation to fee override:
   <img src="assets/hook_flow.svg" alt="Hook flow: swap initiated, beforeSwap reads pool state, computes reserves and ratio, checks cross-chain alerts, branches on swap direction (rebalancing = 0bp, worsening = FeeCurve), returns fee override, afterSwap emits event" width="400" />
 </p>
 
+---
 
 ## Simulations: Real Depeg Events
 
@@ -150,6 +153,7 @@ Circle disclosed \$3.3B in reserves at the failed Silicon Valley Bank. USDC drop
 
 The peg recovered. Both sets of LPs broke even on their positions. The difference: DepegShield LPs earned **65x more fees** for bearing the same 48 hours of existential risk. Zero-fee rebalancing also means recovery flow arrives faster since arbitrageurs face no friction when bringing back the scarce token.
 
+---
 
 ### 2. USDT Whale Attack | June 2023 | Quick Recovery
 
@@ -173,6 +177,7 @@ A single entity dumped 31.5M USDT across DEX pools in a coordinated sell. USDT d
 
 This is where DepegShield doubles as an anti-manipulation mechanism. The fee curve makes pool manipulation at scale economically prohibitive: the whale pays 18x more in fees, all of which goes to LPs.
 
+---
 
 ### 3. UST/LUNA Collapse | May 2022 | No Recovery
 
@@ -196,6 +201,8 @@ DepegShield cannot save LPs from a total collapse. But it extracts **4,314x more
 
 
 **[Moody's tracked 1,900+ depeg events through mid-2023](https://www.theblock.co/post/261727/large-cap-stablecoins-have-depegged-609-times-this-year-moodys-analytics-says), and they haven't stopped.** In October 2025, [\$3.8B in stablecoin value swung off parity](https://www.coingecko.com/learn/october-10-crypto-crash-explained) during a single flash crash that liquidated 1.6M traders. Across all three scenarios above, the pattern is the same: DepegShield LPs earn 18-4,314x more than standard pool LPs for bearing identical risk. In recovery scenarios, that's pure profit. In loss scenarios, it's meaningful damage offset.
+
+---
 
 ## Theoretical Foundation
 
@@ -225,6 +232,7 @@ Zhu (arXiv:2408.07227, 2024) decomposes stablecoin run risk into two components:
 
 > Paper: [Stablecoin Runs and Disclosure Policy in the Presence of Large Sales](https://arxiv.org/abs/2408.07227)
 
+---
 
 ## Project Structure
 
@@ -260,6 +268,7 @@ depegShield/
 │       └── lib/                  # Fee curve math, simulation data
 ```
 
+---
 
 ## Setup Guide
 
@@ -334,6 +343,7 @@ cast send --rpc-url https://lasna-rpc.rnk.dev/ --private-key "\$PRIVATE_KEY" \
 #   cast send <CALLBACK_PROXY> "depositTo(address)" <MONITOR_ADDR> --value 0.01ether
 ```
 
+---
 
 ## Testnet Deployments
 
