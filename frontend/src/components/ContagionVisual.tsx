@@ -126,7 +126,7 @@ export function ContagionVisual() {
                 fill={isDepegged ? "rgba(229, 57, 53, 0.4)" : "rgba(52, 211, 153, 0.2)"}
                 style={{ transition: "width 0.8s ease, fill 0.5s" }}
               />
-              <text x="-30" y="134" fill="var(--text-dim)" fontSize="9" fontFamily="var(--font-display), monospace">
+              <text x="0" y="134" textAnchor="middle" fill="var(--text-dim)" fontSize="9" fontFamily="var(--font-display), monospace">
                 {poolRatio}/{100 - poolRatio}
               </text>
 
@@ -155,8 +155,10 @@ export function ContagionVisual() {
 
         .cv-svg {
           width: 100%;
-          max-width: 100%;
+          max-width: 640px;
           height: auto;
+          margin: 0 auto;
+          display: block;
         }
 
         .cv-pulse-dot-1 {

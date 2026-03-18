@@ -70,22 +70,23 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 2. The Problem -- unchanged */}
-      <section className=" relative z-10">
-        <div className="w-full mx-auto max-w-4xl px-6">
+
+      {/* 2. The Problem */}
+      <section className="relative z-10 bg-[var(--bg-raised)]/40">
+        <div className="w-full mx-auto max-w-5xl px-6">
           <SectionLabel>The Problem</SectionLabel>
           <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2 mb-4">
             Flat fees fail when it matters most
           </h2>
-          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-xl mb-10">
+          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-2xl mb-10">
             Standard pools charge the same 1bp fee whether the pool is balanced or in a death spiral. LPs absorb millions in toxic flow for pennies. No directional awareness means zero incentive to rebalance.
           </p>
 
-          <div className="max-w-3xl">
+          <div>
             <ProblemVisual />
           </div>
 
-          <div className="grid grid-cols-2 gap-6 mt-10 max-w-3xl">
+          <div className="grid grid-cols-2 gap-6 mt-10">
             <div>
               <h3 className="text-base font-medium mb-1.5 tracking-tight text-[var(--text)]">Same fee at 50/50 and 90/10</h3>
               <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
@@ -102,22 +103,23 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 3. The Solution -- unchanged */}
-      <section className=" relative z-10">
-        <div className="w-full mx-auto max-w-4xl px-6">
+
+      {/* 3. The Solution */}
+      <section className="relative z-10">
+        <div className="w-full mx-auto max-w-5xl px-6">
           <SectionLabel>The Solution</SectionLabel>
           <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2 mb-4">
             Directional fees that adapt in real time
           </h2>
-          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-xl mb-10">
+          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-2xl mb-10">
             DepegShield reads pool state on every swap. Fees escalate for panic sellers and drop to zero for rebalancers. Watch the same pool scenario with the hook active.
           </p>
 
-          <div className="max-w-3xl">
+          <div>
             <SolutionVisual />
           </div>
 
-          <div className="grid grid-cols-3 gap-6 mt-10 max-w-3xl">
+          <div className="grid grid-cols-3 gap-6 mt-10">
             {[
               {
                 num: "01",
@@ -145,22 +147,23 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 4. The Bigger Problem -- NEW */}
-      <section className=" relative z-10">
-        <div className="w-full mx-auto max-w-4xl px-6">
+
+      {/* 4. The Bigger Problem */}
+      <section className="relative z-10 bg-[var(--bg-raised)]/40">
+        <div className="w-full mx-auto max-w-5xl px-6">
           <SectionLabel>The Bigger Problem</SectionLabel>
           <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2 mb-4">
             Depegs don&apos;t stay on one chain
           </h2>
-          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-xl mb-10">
+          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-2xl mb-10">
             When a stablecoin depegs on one chain, the same token trades on dozens of others. Arbitrageurs exploit the lag, draining LP value on other chains before local pools show stress. Per-chain hooks are blind to this.
           </p>
 
-          <div className="max-w-3xl">
+          <div>
             <ContagionVisual />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-10 max-w-3xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-10">
             <div>
               <h3 className="text-base font-medium mb-1.5 tracking-tight text-[var(--text)]">Contagion lag</h3>
               <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
@@ -177,22 +180,23 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 5. Cross-Chain Shield -- NEW (centerpiece) */}
-      <section className=" relative z-10">
-        <div className="w-full mx-auto max-w-4xl px-6">
+
+      {/* 5. Cross-Chain Shield */}
+      <section className="relative z-10">
+        <div className="w-full mx-auto max-w-5xl px-6">
           <SectionLabel>Cross-Chain Shield</SectionLabel>
           <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2 mb-4">
             One depeg detected. Every chain protected.
           </h2>
-          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-xl mb-10">
+          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-2xl mb-10">
             ReactiveMonitor watches pools across all chains. When imbalance crosses threshold anywhere, it fires callbacks to AlertReceivers on every other chain. Local hooks read the signal, apply a fee floor instantly. Rebalancing swaps stay free.
           </p>
 
-          <div className="max-w-3xl">
+          <div>
             <CrossChainFlow />
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mt-10 max-w-3xl">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mt-10">
             {[
               {
                 step: "01",
@@ -225,18 +229,19 @@ export default function LandingPage() {
         </div>
       </section>
 
+
       {/* 6. How It Works */}
-      <section className=" relative z-10">
-        <div className="w-full mx-auto max-w-4xl px-6">
+      <section className="relative z-10 bg-[var(--bg-raised)]/40">
+        <div className="w-full mx-auto max-w-5xl px-6">
           <SectionLabel>How It Works</SectionLabel>
           <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2 mb-4">
             Five zones, one continuous curve
           </h2>
-          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-xl mb-10">
+          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-2xl mb-10">
             Every swap passes through the hook. The fee curve reads pool state, computes the imbalance ratio, and returns a dynamic fee in a single atomic transaction.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div className="md:col-span-2 rounded-xl border border-[var(--border)] bg-[var(--bg-raised)]/30 p-2 md:p-4">
               <FeeCurveChart height={280} />
             </div>
@@ -260,17 +265,18 @@ export default function LandingPage() {
         </div>
       </section>
 
+
       {/* 7. Simulations */}
-      <section className=" relative z-10">
-        <div className="w-full mx-auto max-w-4xl px-6">
+      <section className="relative z-10">
+        <div className="w-full mx-auto max-w-5xl px-6">
           <SectionLabel>Simulations</SectionLabel>
           <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2">
             Real depeg events, simulated on-chain
           </h2>
-          <p className="text-[15px] text-[var(--text-secondary)] mt-4 max-w-xl leading-relaxed mb-10">
+          <p className="text-[15px] text-[var(--text-secondary)] mt-4 max-w-2xl leading-relaxed mb-10">
             Three historical depeg events modeled with forge tests. Comparing LP outcomes under DepegShield vs a standard flat-fee pool.
           </p>
-          <div className="max-w-3xl">
+          <div>
             <SimulationReplay />
           </div>
         </div>

@@ -215,8 +215,10 @@ export function CrossChainFlow() {
 
         .ccf-svg {
           width: 100%;
-          max-width: 100%;
+          max-width: 640px;
           height: auto;
+          margin: 0 auto;
+          display: block;
         }
 
         .ccf-ring-pulse {

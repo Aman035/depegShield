@@ -135,15 +135,15 @@ export function SimulationReplay() {
 
       {/* Table */}
       <div className="border border-[var(--border)] rounded-lg overflow-hidden">
-        <table className="w-full text-[12px] table-fixed">
+        <table className="w-full text-[13px] table-fixed">
           <thead>
             <tr className="border-b border-[var(--border)] text-[10px] font-mono uppercase tracking-wider text-[var(--text-dim)]">
-              <th className="text-left px-3 py-1.5 font-medium">Wave</th>
-              <th className="text-left px-3 py-1.5 font-medium">Amount</th>
-              <th className="text-left px-3 py-1.5 font-medium">Ratio</th>
-              <th className="text-right px-3 py-1.5 font-medium">Fee</th>
-              <th className="text-right px-3 py-1.5 font-medium">Shield</th>
-              <th className="text-right px-3 py-1.5 font-medium">Flat</th>
+              <th className="text-left px-3 py-2.5 font-medium">Wave</th>
+              <th className="text-left px-3 py-2.5 font-medium">Amount</th>
+              <th className="text-left px-3 py-2.5 font-medium">Ratio</th>
+              <th className="text-right px-3 py-2.5 font-medium">Fee</th>
+              <th className="text-right px-3 py-2.5 font-medium">Shield</th>
+              <th className="text-right px-3 py-2.5 font-medium">Flat</th>
             </tr>
           </thead>
           <tbody>
@@ -168,20 +168,20 @@ function WaveRow({ wave, index, isActive, isRevealed }: { wave: WaveData; index:
         isActive ? "bg-[var(--bg-hover)]" : ""
       } ${!isRevealed ? "opacity-25" : ""}`}
     >
-      <td className="px-3 py-1.5">
+      <td className="px-3 py-3">
         {wave.isBuy && <span className="text-[var(--green)] mr-1">&#8593;</span>}
         {wave.label}
       </td>
-      <td className="px-3 py-1.5 font-mono text-[var(--text-secondary)]">{wave.amount}</td>
-      <td className="px-3 py-1.5 font-mono text-[var(--text-dim)]">
+      <td className="px-3 py-3 font-mono text-[var(--text-secondary)]">{wave.amount}</td>
+      <td className="px-3 py-3 font-mono text-[var(--text-dim)]">
         {ratioToMultiplier(wave.ratioStart)} <span className="text-[var(--text-dim)]">&rarr;</span>{" "}
         <span style={{ color: feeColor }}>{ratioToMultiplier(wave.ratioEnd)}</span>
       </td>
-      <td className="px-3 py-1.5 text-right font-mono" style={{ color: feeColor }}>
+      <td className="px-3 py-3 text-right font-mono" style={{ color: feeColor }}>
         {wave.shieldFeeBps}bp
       </td>
-      <td className="px-3 py-1.5 text-right font-mono text-[var(--text-secondary)]">{wave.shieldOut}</td>
-      <td className="px-3 py-1.5 text-right font-mono text-[var(--text-dim)]">{wave.flatOut}</td>
+      <td className="px-3 py-3 text-right font-mono text-[var(--text-secondary)]">{wave.shieldOut}</td>
+      <td className="px-3 py-3 text-right font-mono text-[var(--text-dim)]">{wave.flatOut}</td>
     </tr>
   );
 }
