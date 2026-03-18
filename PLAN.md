@@ -1,7 +1,7 @@
 # DepegShield — Implementation Spec
 
 > This file is the source of truth for implementation. Each phase builds on the last.
-> Status: Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ | Phase 4 🔲
+> Status: Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ | Phase 4 ✅
 
 ---
 
@@ -151,8 +151,8 @@ Zone 3: fee = 1500 + (ratio - 15000), capped at 500000
 
 **New file: `contracts/src/AlertReceiver.sol`** (deployed on Unichain)
 - `setAlert(address token, uint8 severity)` — callable only by Reactive Network
-- `clearAlert(address token)` — callable by Reactive Network or after TTL expiry
-- Stores: `mapping(address => Alert)` where Alert = {severity, timestamp, ttl}
+- `clearAlert(address token)` — callable by Reactive Network when source pool recovers
+- Stores: `mapping(address => Alert)` where Alert = {severity, timestamp}
 - `getAlertSeverity(address token) → uint8` — view for hook to read
 
 **Modify: `contracts/src/DepegShieldHook.sol`**
