@@ -22,7 +22,6 @@ contract AlertReceiver is AbstractCallback, IAlertReceiver {
     struct Alert {
         uint128 sourceRatio;  // imbalance ratio (10000 = balanced); max ~100k in practice
         uint40 timestamp;
-        uint40 ttl;
         uint48 sourceChainId; // chain IDs fit in 48 bits (max ~281 trillion)
     }
 
@@ -34,7 +33,7 @@ contract AlertReceiver is AbstractCallback, IAlertReceiver {
     /// @dev keccak256(abi.encodePacked(sorted(localA, localB))) => owner-assigned pairId
     mapping(bytes32 => bytes32) public tokenPairToId;
 
-    event AlertSet(bytes32 indexed pairId, uint128 sourceRatio, uint48 sourceChainId, uint40 ttl);
+    event AlertSet(bytes32 indexed pairId, uint128 sourceRatio, uint48 sourceChainId);
     event AlertCleared(bytes32 indexed pairId, uint48 sourceChainId);
     event PairRegistered(bytes32 indexed pairId, address token0, address token1);
 
@@ -52,6 +51,7 @@ contract AlertReceiver is AbstractCallback, IAlertReceiver {
     /// @param localToken0 First token address on this chain.
     /// @param localToken1 Second token address on this chain.
     function registerPair(bytes32 pairId, address localToken0, address localToken1) external onlyOwner {
+        require(pairId != bytes32(0), "Invalid pairId");
         require(localToken0 != localToken1, "Identical tokens");
         require(localToken0 != address(0) && localToken1 != address(0), "Zero address");
 
@@ -69,17 +69,16 @@ contract AlertReceiver is AbstractCallback, IAlertReceiver {
     ///        address (rvm_id). This parameter absorbs that injection so subsequent args are correct.
     /// @param pairId The pair identifier (owner-assigned, from ReactiveMonitor).
     /// @param sourceRatio The imbalance ratio on the source chain (10000 = balanced).
-    ///        Values <= RATIO_PRECISION clear the alert.
+    ///        Values <= CLEAR_THRESHOLD clear the alert.
     /// @param sourceChainId The chain where the depeg was detected.
-    /// @param ttl Time-to-live in seconds. Alert expires after timestamp + ttl.
     function handleAlert(
         address /* rvmId */,
         bytes32 pairId,
         uint256 sourceRatio,
-        uint256 sourceChainId,
-        uint40 ttl
+        uint256 sourceChainId
     ) external authorizedSenderOnly {
         require(pairId != bytes32(0), "Invalid pairId");
+        require(sourceRatio <= type(uint128).max, "Ratio overflow");
 
         if (sourceRatio <= CLEAR_THRESHOLD) {
             delete alerts[pairId];
@@ -88,11 +87,19 @@ contract AlertReceiver is AbstractCallback, IAlertReceiver {
             alerts[pairId] = Alert({
                 sourceRatio: uint128(sourceRatio),
                 timestamp: uint40(block.timestamp),
-                ttl: ttl,
                 sourceChainId: uint48(sourceChainId)
             });
-            emit AlertSet(pairId, uint128(sourceRatio), uint48(sourceChainId), ttl);
+            emit AlertSet(pairId, uint128(sourceRatio), uint48(sourceChainId));
         }
+    }
+
+    /// @notice Owner safety valve: manually clear an alert if ReactiveMonitor stops working.
+    ///         Without TTL, alerts persist until cleared by a recovery relay. If the relay
+    ///         infrastructure fails, this allows the owner to restore normal fee behavior.
+    function clearAlert(bytes32 pairId) external onlyOwner {
+        require(alerts[pairId].sourceRatio != 0, "No active alert");
+        delete alerts[pairId];
+        emit AlertCleared(pairId, 0);
     }
 
     /// @inheritdoc IAlertReceiver
@@ -103,7 +110,6 @@ contract AlertReceiver is AbstractCallback, IAlertReceiver {
 
         Alert storage a = alerts[pairId];
         if (a.sourceRatio == 0) return 0;
-        if (block.timestamp > uint256(a.timestamp) + uint256(a.ttl)) return 0;
         return a.sourceRatio;
     }
 

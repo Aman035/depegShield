@@ -49,7 +49,6 @@ contract ReactiveMonitor is AbstractReactive {
     uint160 private constant Q96 = uint160(1 << 96);
     uint256 private constant RATIO_PRECISION = 10000;
     uint64 private constant CALLBACK_GAS_LIMIT = 500_000;
-    uint40 private constant DEFAULT_TTL = 600; // 10 minutes
 
     /// @dev Only relay if ratio changed by more than this threshold (50 = 0.5%).
     ///      Prevents spamming callbacks on tiny price movements.
@@ -59,11 +58,11 @@ contract ReactiveMonitor is AbstractReactive {
     ///      100000 = 10x imbalance, well past MAX_FEE territory.
     uint256 private constant MAX_RELAY_RATIO = 100_000;
 
-    /// @dev Precomputed selector for AlertReceiver.handleAlert(address,bytes32,uint256,uint256,uint40)
+    /// @dev Precomputed selector for AlertReceiver.handleAlert(address,bytes32,uint256,uint256)
     ///      First param (address) is a placeholder -- Reactive Network replaces the first 32 bytes
     ///      of the callback payload (after selector) with rvm_id (deployer address).
     bytes4 private constant HANDLE_ALERT_SELECTOR =
-        bytes4(keccak256("handleAlert(address,bytes32,uint256,uint256,uint40)"));
+        bytes4(keccak256("handleAlert(address,bytes32,uint256,uint256)"));
 
     // Event topic0 signatures
     uint256 private constant TOPIC_V3_SWAP =
@@ -243,8 +242,7 @@ contract ReactiveMonitor is AbstractReactive {
             address(0),   // placeholder: Reactive Network replaces with rvm_id
             pairId,
             ratio,
-            sourceChainId,
-            DEFAULT_TTL
+            sourceChainId
         );
 
         emit Callback(dest.chainId, dest.alertReceiver, CALLBACK_GAS_LIMIT, payload);
