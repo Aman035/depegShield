@@ -40,12 +40,12 @@ DepegShield is a Uniswap v4 hook that makes stablecoin pool fees **responsive to
 
 Every swap, the hook derives virtual reserves from the pool's `sqrtPriceX96` and `liquidity` (no oracles) and computes an **imbalance ratio** -- how lopsided the reserves are.
 
-| Pool State | Ratio  | Depeg | Fee Zone                  |
-| ---------- | ------ | ----- | ------------------------- |
-| Balanced   | 1.000x | 0%    | Stable -- 1bp flat        |
-| Drifting   | 1.005x | 0.5%  | Drift -- 1-5bp linear     |
-| Stressed   | 1.01x  | 1.0%  | Stress -- 5-50bp          |
-| Crisis     | 1.03x  | 3.0%  | Crisis -- 50-200bp        |
+| Pool State | Ratio  | Depeg | Fee Zone                      |
+| ---------- | ------ | ----- | ----------------------------- |
+| Balanced   | 1.000x | 0%    | Stable -- 1bp flat            |
+| Drifting   | 1.005x | 0.5%  | Drift -- 1-5bp linear         |
+| Stressed   | 1.01x  | 1.0%  | Stress -- 5-50bp              |
+| Crisis     | 1.03x  | 3.0%  | Crisis -- 50-200bp            |
 | Emergency  | 1.05x  | 5.0%  | Emergency -- 200bp+ (cap 50%) |
 
 ## 2. Directional Fees
@@ -70,7 +70,7 @@ A depeg on Ethereum doesn't instantly appear on Base or Arbitrum. Arbitrageurs e
   <img src="assets/depeg_crosschain_flow.svg" alt="Cross-chain contagion shield flow: source chains emit swap events to ReactiveMonitor on Reactive Network, which sends callbacks to AlertReceivers on protected chains, activating DepegShield fee floors" width="680" />
 </p>
 
-A **ReactiveMonitor** on Reactive Network subscribes to swap events across chains, tracks cumulative imbalance, and fires cross-chain callbacks when a threshold is breached. The local **AlertReceiver** stores the alert, and the hook applies it as a fee floor -- even a locally-balanced pool charges elevated fees if a cross-chain depeg is underway. No off-chain bots. Fully on-chain.
+A **ReactiveMonitor** on Reactive Network subscribes to swap events across chains, tracks cumulative imbalance, and fires cross-chain callbacks when a threshold is breached. The local **AlertReceiver** stores the alert, and the hook applies it as a fee floor -- even a locally-balanced pool charges elevated fees if a cross-chain depeg is underway. The monitor can attach to any Uniswap V2, V3, or V4 pool on any supported chain - not limited to a single protocol version or deployment. No off-chain bots. Fully on-chain.
 
 ## Hook Flow
 
