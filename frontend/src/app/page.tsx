@@ -6,7 +6,8 @@ import { FeeCurveChart } from "@/components/FeeCurveChart";
 import { SimulationReplay } from "@/components/SimulationReplay";
 import { ProblemVisual } from "@/components/ProblemVisual";
 import { SolutionVisual } from "@/components/SolutionVisual";
-import { useFullPageScroll } from "@/hooks/useFullPageScroll";
+import { ContagionVisual } from "@/components/ContagionVisual";
+import { CrossChainFlow } from "@/components/CrossChainFlow";
 
 
 const HeroShield = dynamic(
@@ -20,15 +21,13 @@ const StarsBackground = dynamic(
 );
 
 export default function LandingPage() {
-  const containerRef = useFullPageScroll();
-
   return (
-    <div ref={containerRef} className="min-h-screen relative">
+    <div className="min-h-screen relative">
       <StarsBackground />
 
-      {/* Hero */}
-      <section data-section className="border-b border-[var(--border)] relative overflow-hidden">
-        <div className="mx-auto max-w-6xl px-6 relative z-10 flex items-center">
+      {/* 1. Hero */}
+      <section className="relative overflow-hidden">
+        <div className="w-full mx-auto max-w-6xl px-6 relative z-10 flex items-center">
           <div className="max-w-3xl flex-1">
             <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--green)]/20 bg-[var(--green)]/5 text-[var(--green)] text-[11px] font-mono uppercase tracking-widest mb-8">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] pulse-dot" />
@@ -38,9 +37,13 @@ export default function LandingPage() {
               Depeg<span className="text-[var(--green)]">Shield</span>
             </h1>
             <p className="text-xl md:text-2xl font-light tracking-[-0.01em] text-[var(--text-secondary)] leading-snug mt-6 max-w-lg">
-              Adaptive fees that protect liquidity providers during stablecoin depegs
+              The first Uniswap v4 hook that shields LPs across every chain
             </p>
             <div className="mt-8 flex flex-wrap gap-3 max-w-lg">
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--bg-raised)] border border-[var(--border)] text-[13px] text-[var(--text-secondary)]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--amber)]" />
+                Cross-chain contagion shield
+              </span>
               <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--bg-raised)] border border-[var(--border)] text-[13px] text-[var(--text-secondary)]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--red)]" />
                 Escalating fees on panic sells
@@ -48,10 +51,6 @@ export default function LandingPage() {
               <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--bg-raised)] border border-[var(--border)] text-[13px] text-[var(--text-secondary)]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)]" />
                 Zero fees on recovery flow
-              </span>
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--bg-raised)] border border-[var(--border)] text-[13px] text-[var(--text-secondary)]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--amber)]" />
-                Cross-chain early warnings
               </span>
             </div>
             <div className="mt-10">
@@ -71,9 +70,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Problem */}
-      <section data-section className="border-b border-[var(--border)] relative z-10">
-        <div className="mx-auto max-w-6xl px-6">
+      {/* 2. The Problem -- unchanged */}
+      <section className=" relative z-10">
+        <div className="w-full mx-auto max-w-4xl px-6">
           <SectionLabel>The Problem</SectionLabel>
           <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2 mb-4">
             Flat fees fail when it matters most
@@ -103,9 +102,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Solution */}
-      <section data-section className="border-b border-[var(--border)] relative z-10">
-        <div className="mx-auto max-w-6xl px-6">
+      {/* 3. The Solution -- unchanged */}
+      <section className=" relative z-10">
+        <div className="w-full mx-auto max-w-4xl px-6">
           <SectionLabel>The Solution</SectionLabel>
           <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2 mb-4">
             Directional fees that adapt in real time
@@ -146,9 +145,89 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section data-section className="border-b border-[var(--border)] relative z-10">
-        <div className="mx-auto max-w-6xl px-6">
+      {/* 4. The Bigger Problem -- NEW */}
+      <section className=" relative z-10">
+        <div className="w-full mx-auto max-w-4xl px-6">
+          <SectionLabel>The Bigger Problem</SectionLabel>
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2 mb-4">
+            Depegs don&apos;t stay on one chain
+          </h2>
+          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-xl mb-10">
+            When a stablecoin depegs on one chain, the same token trades on dozens of others. Arbitrageurs exploit the lag, draining LP value on other chains before local pools show stress. Per-chain hooks are blind to this.
+          </p>
+
+          <div className="max-w-3xl">
+            <ContagionVisual />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-10 max-w-3xl">
+            <div>
+              <h3 className="text-base font-medium mb-1.5 tracking-tight text-[var(--text)]">Contagion lag</h3>
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                Minutes between depeg on one chain and arbitrageurs draining others. By the time local pools react, the damage is done.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-base font-medium mb-1.5 tracking-tight text-[var(--text)]">Invisible to local hooks</h3>
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                Per-chain hooks only see their own pool state. A crisis on Ethereum is invisible to the same pool on Arbitrum or Base.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Cross-Chain Shield -- NEW (centerpiece) */}
+      <section className=" relative z-10">
+        <div className="w-full mx-auto max-w-4xl px-6">
+          <SectionLabel>Cross-Chain Shield</SectionLabel>
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2 mb-4">
+            One depeg detected. Every chain protected.
+          </h2>
+          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-xl mb-10">
+            ReactiveMonitor watches pools across all chains. When imbalance crosses threshold anywhere, it fires callbacks to AlertReceivers on every other chain. Local hooks read the signal, apply a fee floor instantly. Rebalancing swaps stay free.
+          </p>
+
+          <div className="max-w-3xl">
+            <CrossChainFlow />
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mt-10 max-w-3xl">
+            {[
+              {
+                step: "01",
+                title: "Monitor",
+                desc: "Watches pools across all chains via Reactive Network subscriptions.",
+              },
+              {
+                step: "02",
+                title: "Detect",
+                desc: "Decodes imbalance ratio from swap events in real time.",
+              },
+              {
+                step: "03",
+                title: "Relay",
+                desc: "Cross-chain callbacks delivered to AlertReceivers on every destination chain.",
+              },
+              {
+                step: "04",
+                title: "Shield",
+                desc: "Fee floor applied using the same 5-zone curve. Rebalancing stays free.",
+              },
+            ].map((item) => (
+              <div key={item.step}>
+                <span className="font-mono text-sm text-[var(--amber)]/60">{item.step}</span>
+                <h3 className="text-base font-medium mt-1 mb-1.5 tracking-tight">{item.title}</h3>
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 6. How It Works */}
+      <section className=" relative z-10">
+        <div className="w-full mx-auto max-w-4xl px-6">
           <SectionLabel>How It Works</SectionLabel>
           <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2 mb-4">
             Five zones, one continuous curve
@@ -157,35 +236,33 @@ export default function LandingPage() {
             Every swap passes through the hook. The fee curve reads pool state, computes the imbalance ratio, and returns a dynamic fee in a single atomic transaction.
           </p>
 
-          <div className="max-w-3xl">
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-raised)]/30 p-2 md:p-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl">
+            <div className="md:col-span-2 rounded-xl border border-[var(--border)] bg-[var(--bg-raised)]/30 p-2 md:p-4">
               <FeeCurveChart height={280} />
             </div>
-          </div>
 
-          <div className="grid grid-cols-4 gap-5 mt-8 max-w-3xl">
-            {[
-              { step: "01", title: "Read pool state", code: "sqrtPriceX96 + liquidity", desc: "Derive reserves and compute imbalance ratio." },
-              { step: "02", title: "Apply fee curve", code: "FeeCurve.getFee(ratio)", desc: "5-zone curve returns fee. Rebalancing gets 0bp." },
-              { step: "03", title: "Cross-chain alert", code: "ReactiveNetwork", desc: "Monitors other chain pools. Multiplies fees 1.5-3x before depeg arrives." },
-              { step: "04", title: "Return override", code: "fee | OVERRIDE_FLAG", desc: "PoolManager applies the dynamic fee to the swap." },
-            ].map((item) => (
-              <div key={item.step}>
-                <span className="font-mono text-sm text-[var(--green)]/50">{item.step}</span>
-                <h3 className="text-base font-medium mt-1 mb-1.5 tracking-tight">{item.title}</h3>
-                <code className="inline-block px-2 py-0.5 rounded bg-[var(--bg-raised)] text-[var(--text-secondary)] text-[11px] font-mono mb-1.5">
-                  {item.code}
-                </code>
-                <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
+            <div className="flex flex-col gap-4">
+              {[
+                { step: "01", title: "Read pool state", code: "sqrtPriceX96 + liquidity", desc: "Derive reserves and compute imbalance ratio." },
+                { step: "02", title: "Apply fee curve", code: "FeeCurve.getFee(ratio)", desc: "5-zone curve returns fee. Rebalancing gets 0bp." },
+              ].map((item) => (
+                <div key={item.step} className="rounded-xl border border-[var(--border)] bg-[var(--bg-raised)]/30 p-4 flex-1">
+                  <span className="font-mono text-sm text-[var(--green)]/50">{item.step}</span>
+                  <h3 className="text-base font-medium mt-1 mb-1.5 tracking-tight">{item.title}</h3>
+                  <code className="inline-block px-2 py-0.5 rounded bg-[var(--bg)] text-[var(--text-secondary)] text-[11px] font-mono mb-1.5">
+                    {item.code}
+                  </code>
+                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{item.desc}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Simulations */}
-      <section data-section className="border-b border-[var(--border)] relative z-10">
-        <div className="mx-auto max-w-6xl px-6" data-scroll-inside>
+      {/* 7. Simulations */}
+      <section className=" relative z-10">
+        <div className="w-full mx-auto max-w-4xl px-6">
           <SectionLabel>Simulations</SectionLabel>
           <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2">
             Real depeg events, simulated on-chain
