@@ -156,8 +156,6 @@ Circle disclosed \$3.3B in reserves at the failed Silicon Valley Bank. USDC drop
 
 The peg recovered. Both sets of LPs broke even on their positions. The difference: DepegShield LPs earned **65x more fees** for bearing the same 48 hours of existential risk. Zero-fee rebalancing also means recovery flow arrives faster since arbitrageurs face no friction when bringing back the scarce token.
 
----
-
 ## 2. USDT Whale Attack | June 2023 | Quick Recovery
 
 A single entity dumped 31.5M USDT across DEX pools in a coordinated sell. USDT depegged to \$0.997. Over \$120M in sell pressure was absorbed at flat fees. Recovery within hours.
@@ -179,8 +177,6 @@ A single entity dumped 31.5M USDT across DEX pools in a coordinated sell. USDT d
 | **Cost to attacker**       | baseline       | **18x more**     |
 
 This is where DepegShield doubles as an anti-manipulation mechanism. The fee curve makes pool manipulation at scale economically prohibitive: the whale pays 18x more in fees, all of which goes to LPs.
-
----
 
 ## 3. UST/LUNA Collapse | May 2022 | No Recovery
 
@@ -396,5 +392,3 @@ Both have a public `mint(address, uint256)` function for testing.
 | LP range          | +/- 1000 ticks (~+/-10% price range) |
 | Initial price     | 1:1 (sqrtPriceX96 = 2^96)            |
 | Initial liquidity | 100K per side                        |
-
-Mock tokens have a public `mint(address, uint256)` function for testing.
