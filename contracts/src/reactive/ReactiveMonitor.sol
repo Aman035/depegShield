@@ -192,10 +192,14 @@ contract ReactiveMonitor is AbstractReactive {
     }
 
     function _computeRatioFromSqrtPrice(uint160 sqrtPriceX96, uint128 liquidity) internal pure returns (uint256) {
-        if (liquidity == 0 || sqrtPriceX96 == 0) return RATIO_PRECISION;
+        if (sqrtPriceX96 == 0) return RATIO_PRECISION;
 
-        uint256 reserve0 = (uint256(liquidity) * uint256(Q96)) / uint256(sqrtPriceX96);
-        uint256 reserve1 = (uint256(liquidity) * uint256(sqrtPriceX96)) / uint256(Q96);
+        // When liquidity is 0 (price pushed past all LP ranges), use nominal liquidity.
+        // The ratio only depends on price (sqrtPriceX96), not absolute amounts, so L cancels out.
+        uint256 L = liquidity > 0 ? uint256(liquidity) : 1e18;
+
+        uint256 reserve0 = (L * uint256(Q96)) / uint256(sqrtPriceX96);
+        uint256 reserve1 = (L * uint256(sqrtPriceX96)) / uint256(Q96);
 
         return _computeRatioFromReserves(reserve0, reserve1);
     }
