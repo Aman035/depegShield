@@ -12,7 +12,7 @@ import { Faucet } from "@/components/Faucet";
 import { SwapEvents } from "@/components/SwapEvents";
 import { PoolLiquidity } from "@/components/PoolLiquidity";
 import { CrossChainAlert } from "@/components/CrossChainAlert";
-import { DEPEG_SHIELD_ABI, DYNAMIC_FEE_FLAG, DEFAULT_TICK_SPACING, HOOK_ADDRESSES, TOKEN_ADDRESSES, CHAIN_NAMES } from "@/config/contracts";
+import { DEPEG_SHIELD_ABI, ALERT_RECEIVER_ABI, ALERT_RECEIVER_ADDRESSES, DYNAMIC_FEE_FLAG, DEFAULT_TICK_SPACING, HOOK_ADDRESSES, TOKEN_ADDRESSES, CHAIN_NAMES } from "@/config/contracts";
 import { supportedChains } from "@/config/chains";
 import { calculateFee, toBps, getZone, getZoneColor, getZoneLabel, ratioToMultiplier, ZONE1_UPPER } from "@/lib/feeCurve";
 import { EXTSLOAD_ABI, POOL_MANAGER_ADDRESSES, computePoolId, getSlot0Key, getLiquidityKey, parseSlot0, parseLiquidity } from "@/lib/poolState";
@@ -104,6 +104,23 @@ export default function ExplorePage() {
     query: { enabled: canQuery },
   });
 
+  // Cross-chain ratio from AlertReceiver (lifted here so fee cards + swap panel can use it)
+  const alertReceiverAddress = ALERT_RECEIVER_ADDRESSES[CHAIN_ID];
+  const alertReceiverConfigured = alertReceiverAddress && alertReceiverAddress !== "0x0000000000000000000000000000000000000000";
+
+  const { data: crossChainRatioRaw } = useReadContract({
+    address: alertReceiverAddress,
+    abi: ALERT_RECEIVER_ABI,
+    functionName: "getCrossChainRatio",
+    args: [sortedCurrency0, sortedCurrency1],
+    chainId: CHAIN_ID,
+    query: { enabled: canQuery && !!alertReceiverConfigured, refetchInterval: 5000 },
+  });
+
+  const crossChainRatio = Number(crossChainRatioRaw ?? 0);
+  const hasCrossChainAlert = crossChainRatio > 10000;
+  const crossChainFeeBps = hasCrossChainAlert ? toBps(calculateFee(crossChainRatio)) : 0;
+
   // Direct PoolManager reads via extsload: liquidity, sqrtPriceX96, tick
   const poolManagerAddress = POOL_MANAGER_ADDRESSES[CHAIN_ID];
   const poolId = (() => {
@@ -173,9 +190,18 @@ export default function ExplorePage() {
     [sortedCurrency0, sortedCurrency1].map(a => a.toLowerCase()).sort().join(",") ===
     [TOKEN_ADDRESSES.mUSDC, TOKEN_ADDRESSES.mUSDT].map(a => a.toLowerCase()).sort().join(",");
 
-  const currentFeeBps = ratio ? toBps(calculateFee(ratio)) : null;
+  const localFeeBps = ratio ? toBps(calculateFee(ratio)) : null;
+  // Effective fee = max(local, crossChainFloor), matching on-chain hook logic
+  const effectiveFeeBps = localFeeBps !== null
+    ? Math.max(localFeeBps, crossChainFeeBps)
+    : null;
+  const crossChainFloorActive = hasCrossChainAlert && crossChainFeeBps > (localFeeBps ?? 0);
   const zone = ratio ? getZone(ratio) : null;
   const zoneColor = zone ? getZoneColor(zone) : "var(--green)";
+  // Use cross-chain zone color when floor is active
+  const effectiveZoneColor = crossChainFloorActive
+    ? getZoneColor(getZone(crossChainRatio))
+    : zoneColor;
 
   return (
     <div className="min-h-screen pt-14 relative">
@@ -278,23 +304,37 @@ export default function ExplorePage() {
               {/* Worsening Fee */}
               <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-raised)]/40 backdrop-blur-sm p-6 flex flex-col">
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="w-6 h-6 rounded-md flex items-center justify-center" style={{ backgroundColor: `color-mix(in srgb, ${zoneColor} 15%, transparent)` }}>
-                    <svg width="12" height="12" viewBox="0 0 10 10"><path d="M5 2L8 7H2L5 2Z" fill={zoneColor} /></svg>
+                  <span className="w-6 h-6 rounded-md flex items-center justify-center" style={{ backgroundColor: `color-mix(in srgb, ${effectiveZoneColor} 15%, transparent)` }}>
+                    <svg width="12" height="12" viewBox="0 0 10 10"><path d="M5 2L8 7H2L5 2Z" fill={effectiveZoneColor} /></svg>
                   </span>
                   <p className="text-[12px] font-mono text-[var(--text-secondary)] uppercase tracking-wider">Worsening Fee</p>
                 </div>
-                <p className="text-5xl font-mono font-semibold tracking-tight" style={{ color: zoneColor }}>
-                  {currentFeeBps?.toFixed(1)}
+                <p className="text-5xl font-mono font-semibold tracking-tight" style={{ color: effectiveZoneColor }}>
+                  {effectiveFeeBps?.toFixed(1)}
                   <span className="text-base font-normal text-[var(--text-secondary)] ml-1.5">bps</span>
                 </p>
                 <p className="text-[14px] text-[var(--text-secondary)] mt-4 leading-relaxed flex-1">
-                  Current fee for swaps that increase pool imbalance
+                  {crossChainFloorActive
+                    ? "Cross-chain fee floor active (depeg detected on another chain)"
+                    : "Current fee for swaps that increase pool imbalance"}
                 </p>
-                <div className="mt-4 pt-4 border-t border-[var(--border)]">
+                <div className="mt-4 pt-4 border-t border-[var(--border)] space-y-2">
                   <div className="flex items-center justify-between text-[13px] font-mono">
                     <span className="text-[var(--text-secondary)]">Zone</span>
                     <span className="font-medium" style={{ color: zoneColor }}>{zone ? getZoneLabel(zone) : ""}</span>
                   </div>
+                  {crossChainFloorActive && (
+                    <div className="flex items-center justify-between text-[13px] font-mono">
+                      <span className="text-[var(--text-secondary)]">Local fee</span>
+                      <span className="text-[var(--text-dim)]">{localFeeBps?.toFixed(1)} bps</span>
+                    </div>
+                  )}
+                  {crossChainFloorActive && (
+                    <div className="flex items-center justify-between text-[13px] font-mono">
+                      <span className="text-[var(--text-secondary)]">X-chain floor</span>
+                      <span className="font-medium" style={{ color: effectiveZoneColor }}>{crossChainFeeBps.toFixed(1)} bps</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -347,7 +387,7 @@ export default function ExplorePage() {
                   <span className="text-[var(--text-secondary)]">Current position</span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-white" />
-                    <span className="font-medium" style={{ color: zoneColor }}>{ratioToMultiplier(ratio)} / {currentFeeBps?.toFixed(1)} bps</span>
+                    <span className="font-medium" style={{ color: effectiveZoneColor }}>{ratioToMultiplier(ratio)} / {effectiveFeeBps?.toFixed(1)} bps</span>
                   </span>
                 </div>
               </div>
@@ -357,7 +397,7 @@ export default function ExplorePage() {
             </div>
 
             {/* Cross-Chain Shield */}
-            <CrossChainAlert chainId={CHAIN_ID} currency0={sortedCurrency0} currency1={sortedCurrency1} />
+            <CrossChainAlert chainId={CHAIN_ID} currency0={sortedCurrency0} currency1={sortedCurrency1} crossChainRatio={crossChainRatio} />
 
             {/* Swap + Faucet */}
             {sqrtPriceX96 && liquidity && reservesData && (
@@ -371,6 +411,7 @@ export default function ExplorePage() {
                   reserve1={reservesData[1]}
                   sqrtPriceX96={sqrtPriceX96}
                   liquidity={liquidity}
+                  crossChainRatio={crossChainRatio}
                   onSwapComplete={refetchAll}
                 />
                 {isDemoPool && (

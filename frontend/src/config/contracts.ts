@@ -149,7 +149,6 @@ export const ALERT_RECEIVER_ABI = [
         components: [
           { name: "sourceRatio", type: "uint128" },
           { name: "timestamp", type: "uint40" },
-          { name: "ttl", type: "uint40" },
           { name: "sourceChainId", type: "uint48" },
         ],
       },
@@ -170,7 +169,6 @@ export const ALERT_RECEIVER_ABI = [
         components: [
           { name: "sourceRatio", type: "uint128" },
           { name: "timestamp", type: "uint40" },
-          { name: "ttl", type: "uint40" },
           { name: "sourceChainId", type: "uint48" },
         ],
       },
@@ -196,8 +194,14 @@ export const ALERT_RECEIVER_ABI = [
       { name: "pairId", type: "bytes32" },
       { name: "sourceRatio", type: "uint256" },
       { name: "sourceChainId", type: "uint256" },
-      { name: "ttl", type: "uint40" },
     ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "clearAlert",
+    inputs: [{ name: "pairId", type: "bytes32" }],
     outputs: [],
     stateMutability: "nonpayable",
   },
@@ -208,7 +212,6 @@ export const ALERT_RECEIVER_ABI = [
       { name: "pairId", type: "bytes32", indexed: true },
       { name: "sourceRatio", type: "uint128", indexed: false },
       { name: "sourceChainId", type: "uint48", indexed: false },
-      { name: "ttl", type: "uint40", indexed: false },
     ],
   },
   {
@@ -224,9 +227,9 @@ export const ALERT_RECEIVER_ABI = [
 
 // AlertReceiver addresses per chain (deployed alongside hooks)
 export const ALERT_RECEIVER_ADDRESSES: Record<number, `0x${string}`> = {
-  1301: "0x137b8d50bd5c3794103636e4e18a49e973c2d9a2",     // Unichain Sepolia
-  11155111: "0xdfa0a5fb820dad9f94259a51c340a227706bf566",  // Sepolia
-  84532: "0xcfdaf5c867592bfb967d63839e5738da366814dc",     // Base Sepolia
+  1301: "0xfe8BA3Fa183C98d637fd549f579670b3cB63b199",     // Unichain Sepolia
+  11155111: "0x6bFe889e87A51634194B9447201548BEc8D825C3",  // Sepolia
+  84532: "0x92a8497C788d43572Fe29f144E6FF015AE3Ff22d",     // Base Sepolia
 };
 
 // Chain display names
@@ -242,9 +245,9 @@ export const DEFAULT_TICK_SPACING = 10;
 
 // Deployed DepegShieldHook addresses per chain
 export const HOOK_ADDRESSES: Record<number, `0x${string}`> = {
-  1301: "0x8eab304b3a950f7c85e168a1ce6b159f132100c0",     // Unichain Sepolia
-  11155111: "0xd3ad90041576954255d8fa1325774b90e501c0c0",  // Sepolia
-  84532: "0x057cb98f4891c6bef266497524e64f09ef5180c0",     // Base Sepolia
+  1301: "0x05e5c38f6ca3e76c30145eb73f1128B7749140C0",     // Unichain Sepolia
+  11155111: "0xEDfFdabADd4263836403BF0D5F92a613Fc9f00C0",  // Sepolia
+  84532: "0xf8Fd12C76C606cA9bc3dAdeE9706B4357e6780c0",     // Base Sepolia
 };
 
 // Hookmate V4 SwapRouter addresses per chain

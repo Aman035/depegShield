@@ -177,7 +177,7 @@ DepegShield closes this gap using [Reactive Network](https://reactive.network/),
 ```
 
 - **ReactiveMonitor** (Reactive Network) - Subscribes to swap events on stablecoin pools across any supported chain. Tracks cumulative sell pressure over a rolling window. When imbalance crosses a configurable threshold, it fires a cross-chain callback to the protected pool's chain.
-- **AlertReceiver** (deployed alongside the hook) - Receives callbacks and stores alert state with TTL-based expiry. Alerts decay automatically if not refreshed.
+- **AlertReceiver** (deployed alongside the hook) - Receives callbacks and stores alert state. Alerts persist until the source pool recovers (ratio returns to balanced), ensuring continuous protection during ongoing depegs.
 - **DepegShieldHook** reads the alert state in `beforeSwap`. When an alert is active, the hook multiplies its fee curve by a severity factor. Even a locally-balanced pool charges elevated fees if a cross-chain depeg is underway.
 
 No off-chain bots. No centralized keepers. Fully on-chain. The source chains to monitor and the alert thresholds are configurable per deployment.
@@ -424,28 +424,28 @@ Both have a public `mint(address, uint256)` function for testing.
 
 | Contract | Address | Explorer |
 |----------|---------|----------|
-| DepegShieldHook | `0xd3ad90041576954255d8fa1325774b90e501c0c0` | [View](https://sepolia.etherscan.io/address/0xd3ad90041576954255d8fa1325774b90e501c0c0) |
-| AlertReceiver | `0xdfa0a5fb820dad9f94259a51c340a227706bf566` | [View](https://sepolia.etherscan.io/address/0xdfa0a5fb820dad9f94259a51c340a227706bf566) |
+| DepegShieldHook | `0xEDfFdabADd4263836403BF0D5F92a613Fc9f00C0` | [View](https://sepolia.etherscan.io/address/0xEDfFdabADd4263836403BF0D5F92a613Fc9f00C0) |
+| AlertReceiver | `0x6bFe889e87A51634194B9447201548BEc8D825C3` | [View](https://sepolia.etherscan.io/address/0x6bFe889e87A51634194B9447201548BEc8D825C3) |
 
 ### Base Sepolia (Chain ID: 84532)
 
 | Contract | Address | Explorer |
 |----------|---------|----------|
-| DepegShieldHook | `0x057cb98f4891c6bef266497524e64f09ef5180c0` | [View](https://sepolia.basescan.org/address/0x057cb98f4891c6bef266497524e64f09ef5180c0) |
-| AlertReceiver | `0xcfdaf5c867592bfb967d63839e5738da366814dc` | [View](https://sepolia.basescan.org/address/0xcfdaf5c867592bfb967d63839e5738da366814dc) |
+| DepegShieldHook | `0xf8Fd12C76C606cA9bc3dAdeE9706B4357e6780c0` | [View](https://sepolia.basescan.org/address/0xf8Fd12C76C606cA9bc3dAdeE9706B4357e6780c0) |
+| AlertReceiver | `0x92a8497C788d43572Fe29f144E6FF015AE3Ff22d` | [View](https://sepolia.basescan.org/address/0x92a8497C788d43572Fe29f144E6FF015AE3Ff22d) |
 
 ### Unichain Sepolia (Chain ID: 1301)
 
 | Contract | Address | Explorer |
 |----------|---------|----------|
-| DepegShieldHook | `0x8eab304b3a950f7c85e168a1ce6b159f132100c0` | [View](https://sepolia.uniscan.xyz/address/0x8eab304b3a950f7c85e168a1ce6b159f132100c0) |
-| AlertReceiver | `0x137b8d50bd5c3794103636e4e18a49e973c2d9a2` | [View](https://sepolia.uniscan.xyz/address/0x137b8d50bd5c3794103636e4e18a49e973c2d9a2) |
+| DepegShieldHook | `0x05e5c38f6ca3e76c30145eb73f1128B7749140C0` | [View](https://sepolia.uniscan.xyz/address/0x05e5c38f6ca3e76c30145eb73f1128B7749140C0) |
+| AlertReceiver | `0xfe8BA3Fa183C98d637fd549f579670b3cB63b199` | [View](https://sepolia.uniscan.xyz/address/0xfe8BA3Fa183C98d637fd549f579670b3cB63b199) |
 
 ### Reactive Lasna (Chain ID: 5318007)
 
 | Contract | Address | Explorer |
 |----------|---------|----------|
-| ReactiveMonitor | `0x9E0e4adC37068ed91c96103dFdCcFA310dF3acf1` | [View](https://lasna.reactscan.net/address/0xf30180b9cec36f5a3762332c0f102fe8c024d64e/contract/0x9E0e4adC37068ed91c96103dFdCcFA310dF3acf1) |
+| ReactiveMonitor | `0xfa5eeb94A58e5E83451C90E0915705E2d3a8EBA1` | [View](https://lasna.reactscan.net/address/0xf30180b9cec36f5a3762332c0f102fe8c024d64e/contract/0xfa5eeb94A58e5E83451C90E0915705E2d3a8EBA1) |
 
 ### Pool Configuration
 
