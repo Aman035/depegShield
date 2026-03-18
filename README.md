@@ -10,120 +10,65 @@
 
 # The Problem
 
-Stablecoin pools on Uniswap v3/v4 have a structural flaw: **LPs absorb catastrophic risk during depeg events and receive near-zero compensation for it.**
-
-Three properties of concentrated liquidity combine to create this:
-
-**1. Concentration amplifies exposure.**
-
-LPs in stablecoin pools concentrate liquidity in tight ranges around the 1:1 peg, typically [0.998, 1.002]. This is what makes stablecoin DEX trading viable: near-zero slippage on large swaps. But it also means that when selling pressure pushes the price through an LP's range, their entire position converts to the depegging asset. An LP who started with a balanced 50/50 split ends up holding 100% of whatever token the market is running from.
-
-**2. The AMM sells the good asset at the worst possible time.**
-
-As the pool price drops tick by tick during a depeg, the AMM mechanically sells the LP's "safe" token to incoming panic sellers at near-par rates, replacing it with the asset under stress. Informed traders extract the scarce token at prices that don't reflect the actual risk. LPs are on the wrong side of an information asymmetry enforced by the protocol itself.
-
-**3. Fees are completely disconnected from risk.**
-
-A flat 1bp fee applies regardless of market conditions:
+Stablecoin pools on Uniswap v3/v4 charge flat fees regardless of market conditions. During a depeg, LPs absorb catastrophic risk and get compensated with effectively nothing.
 
 <p align="center">
   <img src="assets/fee_comparison.svg" alt="Same $5M swap earns LPs $500 in both a balanced pool and an active depeg -- same fee, wildly different risk" width="680" />
 </p>
 
-The LP earns \$500 in both cases. In the second case, they've absorbed \$5M of a potentially collapsing asset. That's not a fee. It's a rounding error on the risk they're taking.
+**1. Concentrated liquidity amplifies exposure.** LPs in stablecoin pools concentrate in tight ranges around the 1:1 peg. When selling pressure pushes through their range, their entire position converts to the depegging asset -- 50/50 becomes 100% of the token everyone is running from.
 
-**4. Depegs propagate cross-chain; pools are blind to it.**
+**2. The AMM mechanically sells the good asset.** As the price drops tick by tick, the AMM replaces LPs' "safe" token with the asset under stress at near-par rates. Informed traders extract the scarce token at prices that don't reflect the actual risk.
 
-Stablecoins trade on dozens of chains simultaneously. A depeg shows up first on the highest-volume pools -- typically Ethereum mainnet -- where the deepest liquidity means informed sellers hit first. Pools on other chains (Base, Arbitrum, etc.) have zero visibility into what's happening elsewhere. Their local reserves still look perfectly balanced.
+**3. Fees are disconnected from risk.** A \$5M panic swap during an active depeg pays the same 1bp fee as a routine swap in a balanced pool. The LP earns \$500 for absorbing \$5M of a potentially collapsing asset.
 
-Cross-chain arbitrageurs exploit this information lag. They bridge the depegging token to a chain where the pool hasn't reacted yet, extract the paired "safe" token at near-par prices, and exit before the local pool has any signal. Each chain's pool is independently blind, creating a cascading extraction pattern where arbs drain one chain after another in sequence.
+**4. Depegs spread cross-chain; pools on other chains are completely blind.** Stablecoins trade on dozens of chains, but a depeg surfaces first where volume is highest (usually Ethereum mainnet). Pools on L2s and alt-chains see nothing -- their local reserves still look perfectly balanced. Cross-chain arbitrageurs exploit this information lag: bridge the depegging token over, drain the scarce "safe" token at near-par prices, and exit before anyone notices. Chain after chain gets picked off in sequence. During the SVB/USDC crisis, Ethereum pools were pricing USDC at \$0.87 while L2 pools were still happily trading it at \$1.
 
-This is not hypothetical. During the SVB/USDC event in March 2023, DEX pools on L2s were still trading USDC near par while Ethereum mainnet pools were already in crisis at \$0.87. The information lag between chains was free money for anyone fast enough to bridge.
-
-**The result:** LPs in stablecoin pools are involuntary insurance underwriters with no information edge. They provide exit liquidity to panicking traders and cross-chain arbitrageurs at the exact moment they face maximum downside, compensated with effectively nothing. The expected value of providing liquidity through a depeg event is negative.
+**The result:** LPs are involuntary insurance underwriters with no information edge, providing exit liquidity to panicking traders and cross-chain arbitrageurs at maximum downside for near-zero compensation.
 
 ---
 
 # The Solution
 
-DepegShield is a Uniswap v4 hook that makes stablecoin pool fees **responsive to risk**.
+DepegShield is a Uniswap v4 hook that makes stablecoin pool fees **responsive to risk** through three mechanisms:
 
-1. **Dynamic fees** - The hook reads the pool's reserves every swap and computes an imbalance ratio (`max(reserveA, reserveB) / min(reserveA, reserveB)`). Fees scale with this ratio across 5 progressive zones: 1bp when balanced, ramping through linear drift and quadratic stress/crisis zones, up to 200bp+ in emergency with a 50% hard cap.
-2. **Directional fees** - Only swaps that worsen the imbalance pay escalated fees. Swaps that rebalance the pool pay zero fees, creating a self-correcting arbitrage incentive that pulls the pool back to health.
-3. **Cross-chain early warning** - A [Reactive Network](https://reactive.network/) smart contract subscribes to swap events on stablecoin pools across other chains (Ethereum, Base, Arbitrum, etc.). When it detects sustained imbalance building up elsewhere, it sends a cross-chain callback that preemptively tightens the local pool's fee curve, so LPs are protected before arbitrageurs bridge over to exploit the price lag. Deployable on any chain.
+## 1. Real-Time Pool Health
 
-Three mechanisms work together:
+Every swap, the hook derives virtual reserves from the pool's `sqrtPriceX96` and `liquidity` (no oracles) and computes an **imbalance ratio** -- how lopsided the reserves are.
 
-## 1. Measure Pool Health in Real Time
+| Pool State | Ratio  | Depeg | Fee Zone                  |
+| ---------- | ------ | ----- | ------------------------- |
+| Balanced   | 1.000x | 0%    | Stable -- 1bp flat        |
+| Drifting   | 1.005x | 0.5%  | Drift -- 1-5bp linear     |
+| Stressed   | 1.01x  | 1.0%  | Stress -- 5-50bp          |
+| Crisis     | 1.03x  | 3.0%  | Crisis -- 50-200bp        |
+| Emergency  | 1.05x  | 5.0%  | Emergency -- 200bp+ (cap 50%) |
 
-Every swap, the hook reads the pool's own on-chain state and computes an **imbalance ratio**: how lopsided the reserves are.
+## 2. Directional Fees
 
-```
-reserve₀ = L × 2⁹⁶ / sqrtPriceX96
-reserve₁ = L × sqrtPriceX96 / 2⁹⁶
-
-imbalanceRatio = max(reserve₀, reserve₁) / min(reserve₀, reserve₁)
-```
-
-No oracles. No external data feeds. Just the pool's own `sqrtPriceX96` and `liquidity` from the PoolManager. The ratio tells you exactly how stressed the pool is:
-
-| Pool State | Reserve Split    | Ratio  | Depeg | What It Means                                   |
-| ---------- | ---------------- | ------ | ----- | ----------------------------------------------- |
-| Balanced   | 10M / 10M        | 1.000x | 0%    | Healthy. Normal trading.                        |
-| Drifting   | 10.025M / 9.975M | 1.005x | 0.5%  | Minor tilt. Could be normal volume fluctuation. |
-| Stressed   | 10.1M / 9.9M     | 1.01x  | 1.0%  | Directional pressure building. Early warning.   |
-| Crisis     | 10.3M / 9.7M     | 1.03x  | 3.0%  | Significant selling. Something's wrong.         |
-| Emergency  | 10.5M / 9.5M     | 1.05x  | 5.0%  | Active depeg event. Circuit breaker engaged.    |
-
-**How this helps LPs:** The pool now has a real-time risk signal. Instead of treating a \$5M panic swap the same as a \$5M routine swap, the hook knows the difference.
-
-## 2. Charge Fees Based on Direction
-
-This is the core insight. The fee is **asymmetric**: it depends on whether the swap is making the pool healthier or sicker.
+Fees are **asymmetric**: only swaps that worsen the imbalance pay escalated fees. Swaps that rebalance the pool pay **zero fees**, turning every imbalanced state into an arbitrage opportunity that pulls the pool back to health.
 
 <p align="center">
   <img src="assets/directional_fees.svg" alt="Directional fee comparison: balanced pool charges 1bp both ways, imbalanced pool charges 50-200bp+ for worsening swaps and 0bp for rebalancing swaps" width="680" />
 </p>
 
-If the pool is already heavy on tokenA and you're dumping more tokenA into it, you're extracting the scarce token during a crisis. You pay an elevated fee.
-
-If you're bringing tokenB back (the token the pool is running low on), you're helping it recover. You pay **zero fees**. Free.
-
-**How this helps LPs:**
-
-- LPs earn 50-200x more fees on the exact swaps that put them at greatest risk.
-- Zero-fee rebalancing turns every imbalanced state into an arbitrage opportunity. Anyone can profit by bringing the scarce token back, and the more stressed the pool is, the stronger that incentive becomes. The pool actively pulls itself back to health.
-- Panic sellers can still exit, but they pay a premium that reflects the real cost they impose on LPs.
-
-The fee escalates across five progressive zones calibrated to real stablecoin depeg thresholds:
+The fee curve escalates across five progressive zones, calibrated to real depeg thresholds:
 
 <p align="center">
   <img src="assets/fee_curve.svg" alt="5-zone adaptive fee curve: Stable (1bp), Drift (1-5bp linear), Stress (5-50bp quadratic), Crisis (50-200bp quadratic), Emergency (200bp+ capped at 50%)" width="680" />
 </p>
 
-Capped at 50% (safety maximum). The curve is value-continuous at all zone boundaries (no fee jumps). Zone thresholds are calibrated to real events: USDT 2022 dipped ~0.5%, USDC/SVB dipped ~13%, UST collapsed 90%+.
+## 3. Cross-Chain Early Warning
 
-## 3. Detect Cross-Chain Depegs Before They Arrive
-
-Depeg events don't start on one chain. When a stablecoin loses its peg, higher-volume pools elsewhere typically reflect it first. A DepegShield-protected pool on any chain might still look perfectly healthy while pools on other chains are already in crisis. Cross-chain arbitrageurs exploit this window: they bridge the depegging token over and extract the paired token at near-par rates before the local pool has any signal that something is wrong.
-
-DepegShield closes this gap using [Reactive Network](https://reactive.network/), a decentralized cross-chain event monitoring system.
+A depeg on Ethereum doesn't instantly appear on Base or Arbitrum. Arbitrageurs exploit this lag to drain pools that haven't reacted yet. DepegShield closes this gap using [Reactive Network](https://reactive.network/).
 
 <p align="center">
   <img src="assets/depeg_crosschain_flow.svg" alt="Cross-chain contagion shield flow: source chains emit swap events to ReactiveMonitor on Reactive Network, which sends callbacks to AlertReceivers on protected chains, activating DepegShield fee floors" width="680" />
 </p>
 
-- **ReactiveMonitor** (Reactive Network) - Subscribes to swap events on stablecoin pools across any supported chain. Tracks cumulative sell pressure over a rolling window. When imbalance crosses a configurable threshold, it fires a cross-chain callback to the protected pool's chain.
-- **AlertReceiver** (deployed alongside the hook) - Receives callbacks and stores alert state. Alerts persist until the source pool recovers (ratio returns to balanced), ensuring continuous protection during ongoing depegs.
-- **DepegShieldHook** reads the alert state in `beforeSwap`. When an alert is active, the hook multiplies its fee curve by a severity factor. Even a locally-balanced pool charges elevated fees if a cross-chain depeg is underway.
-
-No off-chain bots. No centralized keepers. Fully on-chain. The source chains to monitor and the alert thresholds are configurable per deployment.
-
-**How this helps LPs:** The #1 way LPs get hurt is information asymmetry: someone knows the token is depegging, the LP doesn't. Cross-chain alerts close that gap. LPs are protected before the first arbitrageur even arrives.
+A **ReactiveMonitor** on Reactive Network subscribes to swap events across chains, tracks cumulative imbalance, and fires cross-chain callbacks when a threshold is breached. The local **AlertReceiver** stores the alert, and the hook applies it as a fee floor -- even a locally-balanced pool charges elevated fees if a cross-chain depeg is underway. No off-chain bots. Fully on-chain.
 
 ## Hook Flow
-
-The full decision path for every swap, from initiation to fee override:
 
 <p align="center">
   <img src="assets/hook_flow.svg" alt="Hook flow: swap initiated, beforeSwap reads pool state, computes reserves and ratio, checks cross-chain alerts, branches on swap direction (rebalancing = 0bp, worsening = FeeCurve), returns fee override, afterSwap emits event" width="400" />
