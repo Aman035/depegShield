@@ -177,7 +177,7 @@ DepegShield closes this gap using [Reactive Network](https://reactive.network/),
 ```
 
 - **ReactiveMonitor** (Reactive Network) - Subscribes to swap events on stablecoin pools across any supported chain. Tracks cumulative sell pressure over a rolling window. When imbalance crosses a configurable threshold, it fires a cross-chain callback to the protected pool's chain.
-- **AlertReceiver** (deployed alongside the hook) - Receives callbacks and stores alert state with TTL-based expiry. Alerts decay automatically if not refreshed.
+- **AlertReceiver** (deployed alongside the hook) - Receives callbacks and stores alert state. Alerts persist until the source pool recovers (ratio returns to balanced), ensuring continuous protection during ongoing depegs.
 - **DepegShieldHook** reads the alert state in `beforeSwap`. When an alert is active, the hook multiplies its fee curve by a severity factor. Even a locally-balanced pool charges elevated fees if a cross-chain depeg is underway.
 
 No off-chain bots. No centralized keepers. Fully on-chain. The source chains to monitor and the alert thresholds are configurable per deployment.
@@ -304,19 +304,29 @@ depegShield/
 │   ├── src/
 │   │   ├── DepegShieldHook.sol   # Core hook: beforeSwap fee logic, afterSwap events
 │   │   ├── FeeCurve.sol          # 5-zone fee curve library
-│   │   └── MockStablecoin.sol    # Free-mint ERC20 for testnet demos
+│   │   ├── AlertReceiver.sol     # Cross-chain alert storage (per destination chain)
+│   │   ├── MockStablecoin.sol    # Free-mint ERC20 for testnet demos
+│   │   ├── interfaces/
+│   │   │   └── IAlertReceiver.sol
+│   │   └── reactive/
+│   │       └── ReactiveMonitor.sol  # Reactive Network cross-chain monitor
 │   ├── test/
 │   │   ├── DepegShieldHook.t.sol # Hook behavior tests
 │   │   ├── FeeCurve.t.sol        # Fee curve unit + fuzz tests
-│   │   └── DepegScenario.t.sol   # Depeg simulation scenarios
+│   │   ├── DepegScenario.t.sol   # Depeg simulation scenarios
+│   │   ├── AlertReceiver.t.sol   # Alert receiver + pair registry tests
+│   │   └── CrossChainFee.t.sol   # Cross-chain fee floor tests
 │   └── script/
-│       ├── DeployAll.s.sol       # Full deployment: tokens + hook + pool + liquidity
-│       └── 00_DeployHook.s.sol   # Hook-only CREATE2 deployment
+│       ├── 01_DeployTokens.s.sol        # Deploy mUSDC + mUSDT via CREATE2
+│       ├── 02_DeployAlertReceiver.s.sol  # Deploy AlertReceiver + register pair
+│       ├── 03_DeployHook.s.sol           # Mine salt + deploy hook (CREATE2)
+│       ├── 04_CreatePool.s.sol           # Init pool at 1:1 + seed liquidity
+│       └── 05_DeployReactive.s.sol       # ReactiveMonitor config reference
 │
 ├── frontend/                     # Next.js app
 │   └── src/
 │       ├── app/                  # Landing page + Explore page
-│       ├── components/           # FeeCurveChart, SimulationReplay, PoolHealthGauge
+│       ├── components/           # FeeCurveChart, SimulationReplay, PoolHealthGauge, CrossChainAlert
 │       └── lib/                  # Fee curve math, simulation data
 ```
 
@@ -356,44 +366,95 @@ npm run dev
 
 ### Deploy
 
-The `DeployAll` script deploys mock stablecoins (mUSDC, mUSDT), the hook, creates the pool, and adds initial liquidity in a single transaction.
+Deployment uses 5 isolated scripts, run in order per chain. Each script is self-contained with its own env vars.
 
 ```bash
 cd contracts
 cp .env.example .env    # Fill in PRIVATE_KEY, fund the wallet on target chains
 source .env
-forge script script/DeployAll.s.sol --rpc-url $UNICHAIN_SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+# Step 1: Deploy mock tokens (once per chain, deterministic addresses via CREATE2)
+forge script script/01_DeployTokens.s.sol --rpc-url <RPC_URL> --private-key "\$PRIVATE_KEY" --broadcast
+
+# Step 2: Deploy AlertReceiver + register mUSDC/mUSDT pair
+# CALLBACK_PROXY varies per chain (see script comments for addresses)
+CALLBACK_PROXY=0x... forge script script/02_DeployAlertReceiver.s.sol --rpc-url <RPC_URL> --private-key "\$PRIVATE_KEY" --broadcast
+
+# Step 3: Deploy DepegShieldHook (mines CREATE2 salt for flag-encoded address)
+ALERT_RECEIVER=0x... forge script script/03_DeployHook.s.sol --rpc-url <RPC_URL> --private-key "\$PRIVATE_KEY" --broadcast
+
+# Step 4: Create pool at 1:1 price + seed 100K liquidity per side
+HOOK=0x... forge script script/04_CreatePool.s.sol --rpc-url <RPC_URL> --private-key "\$PRIVATE_KEY" --broadcast
+
+# Step 5: Deploy ReactiveMonitor on Reactive Lasna
+# All pool/destination config MUST be in the constructor because the ReactVM
+# creates an isolated state copy at deploy time. Post-deploy calls only
+# affect the RNK chain state, not the ReactVM.
+# See 05_DeployReactive.s.sol for the full constructor args with all 3 chains.
+#
+# Use cast send --create (forge create may time out on Reactive Lasna):
+BYTECODE=\$(forge inspect src/reactive/ReactiveMonitor.sol:ReactiveMonitor bytecode)
+ARGS=\$(cast abi-encode "c((uint256,address,bytes32,uint8,bytes32)[],(uint256,address)[])" \
+  "[(chainId,poolManager,pairId,poolType,poolId),...]" \
+  "[(chainId,alertReceiver),...]")
+cast send --rpc-url https://lasna-rpc.rnk.dev/ --private-key "\$PRIVATE_KEY" \
+  --legacy --value 0.1ether --gas-limit 3000000 \
+  --create "\${BYTECODE}\${ARGS#0x}"
+
+# After deployment, fund the callback proxies on each destination chain:
+#   cast send <CALLBACK_PROXY> "depositTo(address)" <MONITOR_ADDR> --value 0.01ether
 ```
 
 ---
 
 ## Testnet Deployments
 
+All contracts are verified on their respective block explorers.
+
 ### Mock Tokens (same address on all chains via CREATE2)
 
 | Token | Address | Decimals |
 |-------|---------|----------|
-| mUSDC | `0xD6E322dE450F9A276f2F3AFe72bC0C93D5284Ef0` | 6 |
-| mUSDT | `0xf02383D4eBcF11016Df5AdAEB5899B947bcC0098` | 6 |
+| mUSDC | [`0x58C414Bd85bf1d39985476Dfa5fBd59af356E8f0`](https://sepolia.etherscan.io/address/0x58C414Bd85bf1d39985476Dfa5fBd59af356E8f0) | 6 |
+| mUSDT | [`0x2170d1eC7B1392611323A4c1793e580349CC5CC0`](https://sepolia.etherscan.io/address/0x2170d1eC7B1392611323A4c1793e580349CC5CC0) | 6 |
 
 Both have a public `mint(address, uint256)` function for testing.
 
-### Hook Addresses
+### Sepolia (Chain ID: 11155111)
 
-| Chain | Chain ID | Hook Address |
-|-------|----------|-------------|
-| Unichain Sepolia | 1301 | `0x3B101a77A6467E457b3CEFa7Fb4964Da1FBD40c0` |
-| Sepolia | 11155111 | `0x06AAaA578EFe1A6ACbE78DAB5cdE791a0BF040C0` |
-| Base Sepolia | 84532 | `0x1CF03b90D93D33C73d3215Ba73003C69EF6040c0` |
+| Contract | Address | Explorer |
+|----------|---------|----------|
+| DepegShieldHook | `0xEDfFdabADd4263836403BF0D5F92a613Fc9f00C0` | [View](https://sepolia.etherscan.io/address/0xEDfFdabADd4263836403BF0D5F92a613Fc9f00C0) |
+| AlertReceiver | `0x6bFe889e87A51634194B9447201548BEc8D825C3` | [View](https://sepolia.etherscan.io/address/0x6bFe889e87A51634194B9447201548BEc8D825C3) |
+
+### Base Sepolia (Chain ID: 84532)
+
+| Contract | Address | Explorer |
+|----------|---------|----------|
+| DepegShieldHook | `0xf8Fd12C76C606cA9bc3dAdeE9706B4357e6780c0` | [View](https://sepolia.basescan.org/address/0xf8Fd12C76C606cA9bc3dAdeE9706B4357e6780c0) |
+| AlertReceiver | `0x92a8497C788d43572Fe29f144E6FF015AE3Ff22d` | [View](https://sepolia.basescan.org/address/0x92a8497C788d43572Fe29f144E6FF015AE3Ff22d) |
+
+### Unichain Sepolia (Chain ID: 1301)
+
+| Contract | Address | Explorer |
+|----------|---------|----------|
+| DepegShieldHook | `0x05e5c38f6ca3e76c30145eb73f1128B7749140C0` | [View](https://sepolia.uniscan.xyz/address/0x05e5c38f6ca3e76c30145eb73f1128B7749140C0) |
+| AlertReceiver | `0xfe8BA3Fa183C98d637fd549f579670b3cB63b199` | [View](https://sepolia.uniscan.xyz/address/0xfe8BA3Fa183C98d637fd549f579670b3cB63b199) |
+
+### Reactive Lasna (Chain ID: 5318007)
+
+| Contract | Address | Explorer |
+|----------|---------|----------|
+| ReactiveMonitor | `0xfa5eeb94A58e5E83451C90E0915705E2d3a8EBA1` | [View](https://lasna.reactscan.net/address/0xf30180b9cec36f5a3762332c0f102fe8c024d64e/contract/0xfa5eeb94A58e5E83451C90E0915705E2d3a8EBA1) |
 
 ### Pool Configuration
 
 | Parameter | Value |
 |-----------|-------|
-| currency0 | `0xD6E322dE450F9A276f2F3AFe72bC0C93D5284Ef0` (mUSDC) |
-| currency1 | `0xf02383D4eBcF11016Df5AdAEB5899B947bcC0098` (mUSDT) |
 | fee | `0x800000` (DYNAMIC_FEE_FLAG) |
 | tickSpacing | 10 |
 | LP range | +/- 1000 ticks (~+/-10% price range) |
 | Initial price | 1:1 (sqrtPriceX96 = 2^96) |
 | Initial liquidity | 100K per side |
+
+Mock tokens have a public `mint(address, uint256)` function for testing.

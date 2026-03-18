@@ -14,7 +14,10 @@ import {LPFeeLibrary} from "@uniswap/v4-core/src/libraries/LPFeeLibrary.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {FullMath} from "@uniswap/v4-core/src/libraries/FullMath.sol";
 
+import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
+
 import {FeeCurve} from "./FeeCurve.sol";
+import {IAlertReceiver} from "./interfaces/IAlertReceiver.sol";
 
 /// @title DepegShield Hook
 /// @notice Adaptive fee circuit breaker for stablecoin pools on Uniswap v4.
@@ -43,6 +46,9 @@ contract DepegShieldHook is BaseHook {
     ///      Written in _beforeSwap, read and cleared in _afterSwap within the same swap lifecycle.
     uint256 private constant TSLOT_FEE = 0x306bd9877a3aff76248130139941e6dc452bbad447b3a1530aaecf6bb84198c5;
 
+    /// @notice Optional cross-chain alert receiver. address(0) disables cross-chain fee floor.
+    IAlertReceiver public immutable alertReceiver;
+
     // --- Events ---
     event SwapFeeApplied(
         PoolId indexed poolId,
@@ -51,7 +57,9 @@ contract DepegShieldHook is BaseHook {
         uint24 feeApplied
     );
 
-    constructor(IPoolManager _poolManager) BaseHook(_poolManager) {}
+    constructor(IPoolManager _poolManager, address _alertReceiver) BaseHook(_poolManager) {
+        alertReceiver = IAlertReceiver(_alertReceiver);
+    }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
         return Hooks.Permissions({
@@ -98,19 +106,39 @@ contract DepegShieldHook is BaseHook {
         uint256 imbalanceRatio = _computeImbalanceRatio(reserve0, reserve1);
         bool worsensImbalance = _doesSwapWorsenImbalance(reserve0, reserve1, params.zeroForOne);
 
+        uint24 fee;
+
         if (worsensImbalance || imbalanceRatio <= FeeCurve.ZONE1_UPPER) {
-            return FeeCurve.calculateFee(imbalanceRatio);
+            fee = FeeCurve.calculateFee(imbalanceRatio);
+        } else if (params.amountSpecified >= 0) {
+            // Rebalancing + exactOutput: conservative fallback to curve fee
+            fee = FeeCurve.calculateFee(imbalanceRatio);
+        } else {
+            fee = _computeRebalancingFee(sqrtPriceX96, liquidity, params.zeroForOne, params.amountSpecified);
         }
 
-        // Rebalancing an imbalanced pool:
-        // - ExactInput: compute blended fee (0 for rebalancing portion, escalated for overshoot)
-        // - ExactOutput: charge curve fee (can't precisely compute input for overshoot check)
-        if (params.amountSpecified >= 0) {
-            // exactOutput: conservative fallback to curve fee
-            return FeeCurve.calculateFee(imbalanceRatio);
+        // Apply cross-chain fee floor (only for worsening swaps).
+        // If another chain's pool is depegged, charge at least the same fee here.
+        if (worsensImbalance && address(alertReceiver) != address(0)) {
+            fee = _applyCrossChainFloor(key, fee);
         }
 
-        return _computeRebalancingFee(sqrtPriceX96, liquidity, params.zeroForOne, params.amountSpecified);
+        return fee;
+    }
+
+    /// @dev Reads the cross-chain ratio for this token pair (resolved via pairId in
+    ///      AlertReceiver), feeds it through the same fee curve, and returns
+    ///      max(localFee, crossChainFee).
+    function _applyCrossChainFloor(PoolKey calldata key, uint24 localFee) private view returns (uint24) {
+        uint256 crossChainRatio = alertReceiver.getCrossChainRatio(
+            Currency.unwrap(key.currency0),
+            Currency.unwrap(key.currency1)
+        );
+
+        if (crossChainRatio <= RATIO_PRECISION) return localFee;
+
+        uint24 crossChainFee = FeeCurve.calculateFee(crossChainRatio);
+        return crossChainFee > localFee ? crossChainFee : localFee;
     }
 
     function _afterSwap(address, PoolKey calldata key, SwapParams calldata params, BalanceDelta, bytes calldata)

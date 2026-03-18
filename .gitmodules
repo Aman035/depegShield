@@ -7,3 +7,6 @@
 [submodule "contracts/lib/hookmate"]
 	path = contracts/lib/hookmate
 	url = https://github.com/akshatmittal/hookmate
+[submodule "contracts/lib/reactive-lib"]
+	path = contracts/lib/reactive-lib
+	url = https://github.com/Reactive-Network/reactive-lib

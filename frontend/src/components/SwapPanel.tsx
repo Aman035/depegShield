@@ -19,6 +19,7 @@ interface SwapPanelProps {
   reserve1: bigint;
   sqrtPriceX96: string;
   liquidity: string;
+  crossChainRatio?: number;
   onSwapComplete?: () => void;
 }
 
@@ -152,7 +153,7 @@ function computeEffectiveFee(
   return blendedFee;
 }
 
-export function SwapPanel({ chainId, ratio, currency0, currency1, reserve0, reserve1, sqrtPriceX96, liquidity, onSwapComplete }: SwapPanelProps) {
+export function SwapPanel({ chainId, ratio, currency0, currency1, reserve0, reserve1, sqrtPriceX96, liquidity, crossChainRatio = 0, onSwapComplete }: SwapPanelProps) {
   const { address } = useAccount();
   const [sellToken, setSellToken] = useState<Address>(currency0);
   const [amount, setAmount] = useState("");
@@ -222,13 +223,19 @@ export function SwapPanel({ chainId, ratio, currency0, currency1, reserve0, rese
   const insufficientBalance = balance !== undefined && parsedAmount > BigInt(0) && parsedAmount > balance;
 
   // Dynamic fee based on swap amount (mirrors hook's blended fee logic)
-  const effectiveFeeBps = useMemo(
+  // Then apply cross-chain floor: effective = max(local, crossChainFloor)
+  const crossChainFloorBps = crossChainRatio > 10000 ? toBps(calculateFee(crossChainRatio)) : 0;
+  const localFeeBps = useMemo(
     () => computeEffectiveFee(ratio, reserve0, reserve1, zeroForOne, sqrtP, L, parsedAmount),
     [ratio, reserve0, reserve1, zeroForOne, sqrtP, L, parsedAmount],
   );
+  // Rebalancing swaps stay 0bp regardless of cross-chain signals (matches on-chain logic)
+  const isRebalancing = localFeeBps === 0 && ratio > ZONE1_UPPER;
+  const effectiveFeeBps = isRebalancing ? 0 : Math.max(localFeeBps, crossChainFloorBps);
+  const crossChainFloorActive = !isRebalancing && crossChainFloorBps > localFeeBps;
 
   const zone = getZone(ratio);
-  const feeColor = effectiveFeeBps === 0 ? "var(--green)" : getZoneColor(zone);
+  const feeColor = effectiveFeeBps === 0 ? "var(--green)" : crossChainFloorActive ? getZoneColor(getZone(crossChainRatio)) : getZoneColor(zone);
 
   // Output estimation
   const { amountOut, priceImpact } = useMemo(
@@ -424,7 +431,11 @@ export function SwapPanel({ chainId, ratio, currency0, currency1, reserve0, rese
             <div className="flex justify-between text-[13px] font-mono">
               <span className="text-[var(--text-secondary)]">Fee</span>
               <span className="font-medium" style={{ color: feeColor }}>
-                {effectiveFeeBps === 0 ? "0 bps (rebalancing)" : `${effectiveFeeBps.toFixed(1)} bps`}
+                {effectiveFeeBps === 0
+                  ? "0 bps (rebalancing)"
+                  : crossChainFloorActive
+                    ? `${effectiveFeeBps.toFixed(1)} bps (x-chain floor)`
+                    : `${effectiveFeeBps.toFixed(1)} bps`}
               </span>
             </div>
             <div className="flex justify-between text-[13px] font-mono">

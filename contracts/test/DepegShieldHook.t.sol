@@ -50,7 +50,7 @@ contract DepegShieldHookTest is BaseTest {
         address flags = address(
             uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG) ^ (0x4444 << 144)
         );
-        bytes memory constructorArgs = abi.encode(poolManager);
+        bytes memory constructorArgs = abi.encode(poolManager, address(0));
         deployCodeTo("DepegShieldHook.sol:DepegShieldHook", constructorArgs, flags);
         hook = DepegShieldHook(flags);
 
