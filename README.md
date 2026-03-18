@@ -8,7 +8,7 @@
 
 ---
 
-## The Problem
+# The Problem
 
 Stablecoin pools on Uniswap v3/v4 have a structural flaw: **LPs absorb catastrophic risk during depeg events and receive near-zero compensation for it.**
 
@@ -44,7 +44,7 @@ This is not hypothetical. During the SVB/USDC event in March 2023, DEX pools on 
 
 ---
 
-## The Solution
+# The Solution
 
 DepegShield is a Uniswap v4 hook that makes stablecoin pool fees **responsive to risk**.
 
@@ -54,7 +54,7 @@ DepegShield is a Uniswap v4 hook that makes stablecoin pool fees **responsive to
 
 Three mechanisms work together:
 
-### 1. Measure Pool Health in Real Time
+## 1. Measure Pool Health in Real Time
 
 Every swap, the hook reads the pool's own on-chain state and computes an **imbalance ratio**: how lopsided the reserves are.
 
@@ -77,7 +77,7 @@ No oracles. No external data feeds. Just the pool's own `sqrtPriceX96` and `liqu
 
 **How this helps LPs:** The pool now has a real-time risk signal. Instead of treating a \$5M panic swap the same as a \$5M routine swap, the hook knows the difference.
 
-### 2. Charge Fees Based on Direction
+## 2. Charge Fees Based on Direction
 
 This is the core insight. The fee is **asymmetric**: it depends on whether the swap is making the pool healthier or sicker.
 
@@ -103,7 +103,7 @@ The fee escalates across five progressive zones calibrated to real stablecoin de
 
 Capped at 50% (safety maximum). The curve is value-continuous at all zone boundaries (no fee jumps). Zone thresholds are calibrated to real events: USDT 2022 dipped ~0.5%, USDC/SVB dipped ~13%, UST collapsed 90%+.
 
-### 3. Detect Cross-Chain Depegs Before They Arrive
+## 3. Detect Cross-Chain Depegs Before They Arrive
 
 Depeg events don't start on one chain. When a stablecoin loses its peg, higher-volume pools elsewhere typically reflect it first. A DepegShield-protected pool on any chain might still look perfectly healthy while pools on other chains are already in crisis. Cross-chain arbitrageurs exploit this window: they bridge the depegging token over and extract the paired token at near-par rates before the local pool has any signal that something is wrong.
 
@@ -121,7 +121,7 @@ No off-chain bots. No centralized keepers. Fully on-chain. The source chains to 
 
 **How this helps LPs:** The #1 way LPs get hurt is information asymmetry: someone knows the token is depegging, the LP doesn't. Cross-chain alerts close that gap. LPs are protected before the first arbitrageur even arrives.
 
-### Hook Flow
+## Hook Flow
 
 The full decision path for every swap, from initiation to fee override:
 
@@ -131,11 +131,11 @@ The full decision path for every swap, from initiation to fee override:
 
 ---
 
-## Simulations: Real Depeg Events
+# Simulations: Real Depeg Events
 
 Each simulation uses a stablecoin pool with equal reserves and models the actual sell pressure observed in historical events. We compare total LP fees earned and net LP outcome under a standard flat-fee pool vs a DepegShield-protected pool. Numbers below are from on-chain Foundry simulations (`test/DepegScenario.t.sol`).
 
-### 1. SVB / USDC Depeg | March 2023 | Recovery in 48h
+## 1. SVB / USDC Depeg | March 2023 | Recovery in 48h
 
 Circle disclosed \$3.3B in reserves at the failed Silicon Valley Bank. USDC dropped to \$0.87 (~13% depeg). On Aave, 3,400 positions were liquidated (\$24M, 86% in USDC). The peg recovered in 48 hours after the FDIC backstopped depositors.
 
@@ -158,7 +158,7 @@ The peg recovered. Both sets of LPs broke even on their positions. The differenc
 
 ---
 
-### 2. USDT Whale Attack | June 2023 | Quick Recovery
+## 2. USDT Whale Attack | June 2023 | Quick Recovery
 
 A single entity dumped 31.5M USDT across DEX pools in a coordinated sell. USDT depegged to \$0.997. Over \$120M in sell pressure was absorbed at flat fees. Recovery within hours.
 
@@ -182,7 +182,7 @@ This is where DepegShield doubles as an anti-manipulation mechanism. The fee cur
 
 ---
 
-### 3. UST/LUNA Collapse | May 2022 | No Recovery
+## 3. UST/LUNA Collapse | May 2022 | No Recovery
 
 UST lost its algorithmic peg and collapsed to \$0. Over \$50B in market cap was destroyed. LPs in UST pairs suffered total loss as positions converted entirely to a worthless token.
 
@@ -206,11 +206,11 @@ DepegShield cannot save LPs from a total collapse. But it extracts **4,314x more
 
 ---
 
-## Theoretical Foundation
+# Theoretical Foundation
 
 The mechanism design draws directly from three areas of academic research on stablecoin stability.
 
-### Coordination Game Model
+## Coordination Game Model
 
 Ahmed, Aldasoro & Duley (BIS Working Paper No. 1164, 2025) model stablecoin stability as a **coordination game** in the tradition of Diamond-Dybvig bank run theory. Each holder decides whether to redeem based on a private signal about fundamentals and their expectation of what others will do. The paper establishes that a critical threshold exists: below it, all holders maintain confidence; above it, a self-fulfilling run occurs. Crucially, this threshold is a function of transaction costs.
 
@@ -218,7 +218,7 @@ Ahmed, Aldasoro & Duley (BIS Working Paper No. 1164, 2025) model stablecoin stab
 
 > Paper: [Public Information and Stablecoin Runs](https://www.bis.org/publ/work1164.pdf)
 
-### Target Zone Model
+## Target Zone Model
 
 Hui, Wong & Lo (Journal of International Money and Finance, 2025) apply the **Krugman target zone model** from currency board theory to analyze stablecoin price dynamics. Their central finding is that price stability improves proportionally to the strength of the mean-reverting force acting on the peg.
 
@@ -226,7 +226,7 @@ Hui, Wong & Lo (Journal of International Money and Finance, 2025) apply the **Kr
 
 > Paper: [Stablecoin price dynamics under a peg-stabilising mechanism](https://www.sciencedirect.com/science/article/abs/pii/S0261560625000154). _Journal of International Money and Finance_, 2025.
 
-### Large Sales Attack Vector
+## Large Sales Attack Vector
 
 Zhu (arXiv:2408.07227, 2024) decomposes stablecoin run risk into two components: (1) coordinated small redemptions driven by poor perceived collateral quality, and (2) **large speculative sales** by individual actors that destabilize markets independently of fundamentals.
 
@@ -236,7 +236,7 @@ Zhu (arXiv:2408.07227, 2024) decomposes stablecoin run risk into two components:
 
 ---
 
-## Project Structure
+# Project Structure
 
 ```
 depegShield/
@@ -272,15 +272,15 @@ depegShield/
 
 ---
 
-## Setup Guide
+# Setup Guide
 
-### Prerequisites
+## Prerequisites
 
 - [Foundry](https://book.getfoundry.sh/getting-started/installation) (run `foundryup` to install or update)
 - [Node.js](https://nodejs.org/) 20+
 - Git
 
-### Installation
+## Installation
 
 ```bash
 git clone https://github.com/aman035/depegShield.git
@@ -288,7 +288,7 @@ cd depegShield
 git submodule update --init --recursive
 ```
 
-### Contracts
+## Contracts
 
 ```bash
 cd contracts
@@ -296,7 +296,7 @@ forge build
 forge test -vv
 ```
 
-### Frontend
+## Frontend
 
 ```bash
 cd frontend
@@ -304,7 +304,7 @@ npm install
 npm run dev
 ```
 
-### Deploy
+## Deploy
 
 Deployment uses 5 isolated scripts, run in order per chain. Each script is self-contained with its own env vars.
 
@@ -347,11 +347,11 @@ cast send --rpc-url https://lasna-rpc.rnk.dev/ --private-key "\$PRIVATE_KEY" \
 
 ---
 
-## Testnet Deployments
+# Testnet Deployments
 
 All contracts are verified on their respective block explorers.
 
-### Mock Tokens (same address on all chains via CREATE2)
+## Mock Tokens (same address on all chains via CREATE2)
 
 | Token | Address                                                                                                                         | Decimals |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------- | -------- |
@@ -360,34 +360,34 @@ All contracts are verified on their respective block explorers.
 
 Both have a public `mint(address, uint256)` function for testing.
 
-### Sepolia (Chain ID: 11155111)
+## Sepolia (Chain ID: 11155111)
 
 | Contract        | Address                                      | Explorer                                                                                |
 | --------------- | -------------------------------------------- | --------------------------------------------------------------------------------------- |
 | DepegShieldHook | `0xEDfFdabADd4263836403BF0D5F92a613Fc9f00C0` | [View](https://sepolia.etherscan.io/address/0xEDfFdabADd4263836403BF0D5F92a613Fc9f00C0) |
 | AlertReceiver   | `0x6bFe889e87A51634194B9447201548BEc8D825C3` | [View](https://sepolia.etherscan.io/address/0x6bFe889e87A51634194B9447201548BEc8D825C3) |
 
-### Base Sepolia (Chain ID: 84532)
+## Base Sepolia (Chain ID: 84532)
 
 | Contract        | Address                                      | Explorer                                                                                |
 | --------------- | -------------------------------------------- | --------------------------------------------------------------------------------------- |
 | DepegShieldHook | `0xf8Fd12C76C606cA9bc3dAdeE9706B4357e6780c0` | [View](https://sepolia.basescan.org/address/0xf8Fd12C76C606cA9bc3dAdeE9706B4357e6780c0) |
 | AlertReceiver   | `0x92a8497C788d43572Fe29f144E6FF015AE3Ff22d` | [View](https://sepolia.basescan.org/address/0x92a8497C788d43572Fe29f144E6FF015AE3Ff22d) |
 
-### Unichain Sepolia (Chain ID: 1301)
+## Unichain Sepolia (Chain ID: 1301)
 
 | Contract        | Address                                      | Explorer                                                                               |
 | --------------- | -------------------------------------------- | -------------------------------------------------------------------------------------- |
 | DepegShieldHook | `0x05e5c38f6ca3e76c30145eb73f1128B7749140C0` | [View](https://sepolia.uniscan.xyz/address/0x05e5c38f6ca3e76c30145eb73f1128B7749140C0) |
 | AlertReceiver   | `0xfe8BA3Fa183C98d637fd549f579670b3cB63b199` | [View](https://sepolia.uniscan.xyz/address/0xfe8BA3Fa183C98d637fd549f579670b3cB63b199) |
 
-### Reactive Lasna (Chain ID: 5318007)
+## Reactive Lasna (Chain ID: 5318007)
 
 | Contract        | Address                                      | Explorer                                                                                                                                   |
 | --------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | ReactiveMonitor | `0xfa5eeb94A58e5E83451C90E0915705E2d3a8EBA1` | [View](https://lasna.reactscan.net/address/0xf30180b9cec36f5a3762332c0f102fe8c024d64e/contract/0xfa5eeb94A58e5E83451C90E0915705E2d3a8EBA1) |
 
-### Pool Configuration (Mock Stablecoin Pools)
+## Pool Configuration (Mock Stablecoin Pools)
 
 | Parameter         | Value                                |
 | ----------------- | ------------------------------------ |
