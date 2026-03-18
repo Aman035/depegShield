@@ -1,0 +1,71 @@
+<svg width="100%" viewBox="0 0 680 220" xmlns="http://www.w3.org/2000/svg">
+<style>
+  @keyframes pulse {
+    0%, 100% { opacity: 0.15; }
+    50% { opacity: 0.6; }
+  }
+  .danger-pulse { animation: pulse 2s ease-in-out infinite; }
+</style>
+
+<!-- LEFT: Normal Market -->
+<g>
+  <!-- Header -->
+  <text x="165" y="24" text-anchor="middle" fill="rgb(250,249,245)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="13px" font-weight="500">Normal Market</text>
+
+  <!-- Pool box (green) -->
+  <rect x="28" y="36" width="274" height="100" rx="8" stroke-width="0.5" fill="rgb(8,80,65)" stroke="rgb(93,202,165)"/>
+
+  <!-- Green status dot -->
+  <circle cx="56" cy="56" r="5" fill="rgb(93,202,165)"/>
+  <text x="68" y="60" fill="rgb(159,225,203)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="11px" font-weight="500">BALANCED</text>
+
+  <!-- Swap info -->
+  <text x="165" y="72" text-anchor="middle" fill="rgb(159,225,203)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="12px" font-weight="400">USDC/USDT pool -- 50/50</text>
+
+  <!-- Swap arrow representation -->
+  <text x="165" y="94" text-anchor="middle" fill="rgb(250,249,245)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="14px" font-weight="500">Swap $5M USDC &#x2192; USDT</text>
+
+  <!-- Fee box -->
+  <rect x="68" y="110" width="194" height="22" rx="4" stroke-width="0.5" fill="rgb(68,68,65)" stroke="rgb(180,178,169)"/>
+  <text x="165" y="125" text-anchor="middle" fill="rgb(211,209,199)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="12px" font-weight="500">Fee: 1bp &#x2192; $500</text>
+</g>
+
+<!-- RIGHT: Active Depeg -->
+<g>
+  <!-- Header -->
+  <text x="515" y="24" text-anchor="middle" fill="rgb(250,249,245)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="13px" font-weight="500">Active Depeg</text>
+
+  <!-- Pool box (dark with red stroke) -->
+  <rect x="378" y="36" width="274" height="100" rx="8" stroke-width="0.5" fill="rgb(68,68,65)" stroke="rgb(226,75,74)"/>
+
+  <!-- Red pulsing glow -->
+  <circle cx="406" cy="56" r="10" class="danger-pulse" fill="rgb(226,75,74)"/>
+  <!-- Red status dot (solid) -->
+  <circle cx="406" cy="56" r="5" fill="rgb(226,75,74)"/>
+  <text x="418" y="60" fill="rgb(226,75,74)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="11px" font-weight="500">CRISIS</text>
+
+  <!-- Pool info -->
+  <text x="515" y="72" text-anchor="middle" fill="rgb(211,209,199)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="12px" font-weight="400">USDC/USDT pool -- 85/15 imbalance</text>
+
+  <!-- Swap info -->
+  <text x="515" y="94" text-anchor="middle" fill="rgb(250,249,245)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="14px" font-weight="500">Swap $5M USDC &#x2192; USDT</text>
+
+  <!-- Fee box (same fee, highlighted as problem) -->
+  <rect x="418" y="110" width="194" height="22" rx="4" stroke-width="0.5" fill="rgb(68,68,65)" stroke="rgb(180,178,169)"/>
+  <text x="515" y="125" text-anchor="middle" fill="rgb(211,209,199)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="12px" font-weight="500">Fee: 1bp &#x2192; $500</text>
+
+  <!-- LP absorbs note -->
+  <text x="515" y="150" text-anchor="middle" fill="rgb(226,75,74)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="11px" font-weight="400">LP absorbs $5M of collapsing asset</text>
+</g>
+
+<!-- CENTER DIVIDER -->
+<line x1="340" y1="36" x2="340" y2="136" stroke="rgb(180,178,169)" stroke-width="0.5" stroke-dasharray="4 4" opacity="0.4"/>
+
+<!-- VS label -->
+<rect x="325" y="76" width="30" height="20" rx="4" fill="rgb(68,68,65)" stroke="rgb(180,178,169)" stroke-width="0.5"/>
+<text x="340" y="90" text-anchor="middle" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="11px" font-weight="500">vs</text>
+
+<!-- BOTTOM CALLOUT -->
+<rect x="140" y="170" width="400" height="36" rx="6" stroke-width="0.5" fill="rgb(68,68,65)" stroke="rgb(226,75,74)"/>
+<text x="340" y="193" text-anchor="middle" fill="rgb(250,249,245)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="14px" font-weight="500">Same fee. Wildly different risk.</text>
+</svg>

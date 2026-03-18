@@ -1,25 +1,7 @@
 # DepegShield
 
-### Risk-Responsive Fee Hook for Stablecoin Pools
+### The first Uniswap v4 hook that shields LPs across every chain
 
----
-
-## Table of Contents
-
-- [The Problem](#the-problem)
-- [The Solution](#the-solution)
-  - [Measure Pool Health in Real Time](#1-measure-pool-health-in-real-time)
-  - [Charge Fees Based on Direction](#2-charge-fees-based-on-direction)
-  - [Detect Cross-Chain Depegs Before They Arrive](#3-detect-cross-chain-depegs-before-they-arrive)
-- [Simulations: Real Depeg Events](#simulations-real-depeg-events)
-  - [SVB / USDC Depeg (Recovery in 48h)](#1-svb--usdc-depeg--march-2023--recovery-in-48h)
-  - [USDT Whale Attack (Quick Recovery)](#2-usdt-whale-attack--june-2023--quick-recovery)
-  - [UST/LUNA Collapse (No Recovery)](#3-ustluna-collapse--may-2022--no-recovery)
-- [Theoretical Foundation](#theoretical-foundation)
-- [Project Structure](#project-structure)
-- [Setup Guide](#setup-guide)
-
----
 
 ## The Problem
 
@@ -39,12 +21,9 @@ As the pool price drops tick by tick during a depeg, the AMM mechanically sells 
 
 A flat 1bp fee applies regardless of market conditions:
 
-```
-  Normal $5M swap in a balanced pool:     1bp  -->  $500 fee to LPs
-  Panic $5M swap during active depeg:    1bp  -->  $500 fee to LPs
-                                                     ↑
-                                            Same fee. Wildly different risk.
-```
+<p align="center">
+  <img src="assets/fee_comparison.svg" alt="Same $5M swap earns LPs $500 in both a balanced pool and an active depeg -- same fee, wildly different risk" width="680" />
+</p>
 
 The LP earns \$500 in both cases. In the second case, they've absorbed \$5M of a potentially collapsing asset. That's not a fee. It's a rounding error on the risk they're taking.
 
@@ -58,7 +37,6 @@ This is not hypothetical. During the SVB/USDC event in March 2023, DEX pools on 
 
 **The result:** LPs in stablecoin pools are involuntary insurance underwriters with no information edge. They provide exit liquidity to panicking traders and cross-chain arbitrageurs at the exact moment they face maximum downside, compensated with effectively nothing. The expected value of providing liquidity through a depeg event is negative.
 
----
 
 ## The Solution
 
@@ -97,16 +75,9 @@ No oracles. No external data feeds. Just the pool's own `sqrtPriceX96` and `liqu
 
 This is the core insight. The fee is **asymmetric**: it depends on whether the swap is making the pool healthier or sicker.
 
-```
-             Balanced Pool                    Imbalanced Pool (3%+ depeg)
-          ┌─────────────────┐              ┌──────────────────────────────────┐
-          │                 │              │                                  │
- tokenA → │    1bp fee      │    tokenA →  │  50-200bp+ fee (worsening)       │
-          │                 │              │                                  │
- tokenB → │    1bp fee      │    tokenB →  │  0bp fee (rebalancing)           │
-          │                 │              │                                  │
-          └─────────────────┘              └──────────────────────────────────┘
-```
+<p align="center">
+  <img src="assets/directional_fees.svg" alt="Directional fee comparison: balanced pool charges 1bp both ways, imbalanced pool charges 50-200bp+ for worsening swaps and 0bp for rebalancing swaps" width="680" />
+</p>
 
 If the pool is already heavy on tokenA and you're dumping more tokenA into it, you're extracting the scarce token during a crisis. You pay an elevated fee.
 
@@ -120,47 +91,9 @@ If you're bringing tokenB back (the token the pool is running low on), you're he
 
 The fee escalates across five progressive zones calibrated to real stablecoin depeg thresholds:
 
-```
-                        Fee charged on imbalance-worsening swaps
-                        (rebalancing swaps always pay 0bp)
-
-  Fee
-  (bps)
-    │
-200 ┤                                               ╱  (5% depeg)
-    │                                             ╱╱
-    │                                           ╱╱
-150 ┤                                        ╱╱
-    │                                      ╱╱
-    │                                   ╱╱
-100 ┤                                ╱╱
-    │                             ╱╱
-    │                          ╱╱
- 50 ┤                       ·╱  (3% depeg)
-    │                    ··
-    │                 ··
- 15 ┤              ··
-    │           ··
-  5 ┤        ···  (1% depeg)
-    │      ╱╱
-  1 ┤─────╱  (0.5% depeg)
-    │
-  0 ┼─────┬──────┬──────────────┬─────────────┬──────────
-       1.005x  1.01x         1.03x         1.05x
-         │       │              │             │
-  STABLE │ DRIFT │   STRESS     │   CRISIS    │ EMERGENCY
-   1bp   │ 1-5bp │   5-50bp     │  50-200bp   │  200bp+
-   flat  │linear │  quadratic   │  quadratic  │ quadratic
-```
-
-```
-fee(r) =
-  1bp                                           if r <= 1.005x   (stable)
-  1bp + linear ramp to 5bp                      if 1.005 < r <= 1.01  (drift)
-  5bp + quadratic ramp to 50bp                  if 1.01  < r <= 1.03  (stress)
-  50bp + quadratic ramp to 200bp                if 1.03  < r <= 1.05  (crisis)
-  200bp + quadratic (uncapped)                  if r > 1.05      (emergency)
-```
+<p align="center">
+  <img src="assets/fee_curve.svg" alt="5-zone adaptive fee curve: Stable (1bp), Drift (1-5bp linear), Stress (5-50bp quadratic), Crisis (50-200bp quadratic), Emergency (200bp+ capped at 50%)" width="680" />
+</p>
 
 Capped at 50% (safety maximum). The curve is value-continuous at all zone boundaries (no fee jumps). Zone thresholds are calibrated to real events: USDT 2022 dipped ~0.5%, USDC/SVB dipped ~13%, UST collapsed 90%+.
 
@@ -170,33 +103,9 @@ Depeg events don't start on one chain. When a stablecoin loses its peg, higher-v
 
 DepegShield closes this gap using [Reactive Network](https://reactive.network/), a decentralized cross-chain event monitoring system.
 
-```mermaid
-flowchart LR
-    subgraph Sources["Source Chains"]
-        ETH["Ethereum"]
-        BASE["Base"]
-        ARB["Arbitrum"]
-        OTHER["any chain..."]
-    end
-
-    subgraph Reactive["Reactive Network"]
-        RM["ReactiveMonitor\n(RSC)\n\nTracks cumulative\nimbalance ratio"]
-    end
-
-    subgraph Protected["Protected Pool's Chain"]
-        AR["AlertReceiver"]
-        HOOK["DepegShieldHook"]
-        RESULT["Fees tightened\nBEFORE arbs arrive"]
-    end
-
-    ETH -- "Swap events" --> RM
-    BASE -- "Swap events" --> RM
-    ARB -- "Swap events" --> RM
-    OTHER -- "Swap events" --> RM
-    RM -- "Cross-chain\ncallback" --> AR
-    AR --> HOOK
-    HOOK --> RESULT
-```
+<p align="center">
+  <img src="assets/depeg_crosschain_flow.svg" alt="Cross-chain contagion shield flow: source chains emit swap events to ReactiveMonitor on Reactive Network, which sends callbacks to AlertReceivers on protected chains, activating DepegShield fee floors" width="680" />
+</p>
 
 - **ReactiveMonitor** (Reactive Network) - Subscribes to swap events on stablecoin pools across any supported chain. Tracks cumulative sell pressure over a rolling window. When imbalance crosses a configurable threshold, it fires a cross-chain callback to the protected pool's chain.
 - **AlertReceiver** (deployed alongside the hook) - Receives callbacks and stores alert state. Alerts persist until the source pool recovers (ratio returns to balanced), ensuring continuous protection during ongoing depegs.
@@ -210,60 +119,21 @@ No off-chain bots. No centralized keepers. Fully on-chain. The source chains to 
 
 The full decision path for every swap, from initiation to fee override:
 
-```mermaid
-sequenceDiagram
-    participant Swapper
-    participant PoolManager
-    participant Hook as DepegShieldHook
-    participant AR as AlertReceiver
-    participant FC as FeeCurve
+<p align="center">
+  <img src="assets/hook_flow.svg" alt="Hook flow: swap initiated, beforeSwap reads pool state, computes reserves and ratio, checks cross-chain alerts, branches on swap direction (rebalancing = 0bp, worsening = FeeCurve), returns fee override, afterSwap emits event" width="400" />
+</p>
 
-    Swapper->>PoolManager: swap()
-    PoolManager->>Hook: beforeSwap()
-
-    Hook->>PoolManager: Read sqrtPriceX96 + liquidity
-    PoolManager-->>Hook: Pool state
-
-    Note over Hook: Compute virtual reserves<br/>reserve₀ = L × 2⁹⁶ / sqrtPrice<br/>reserve₁ = L × sqrtPrice / 2⁹⁶
-
-    Note over Hook: Compute imbalance ratio<br/>ratio = max / min
-
-    Hook->>AR: getLatestAlert(token0, token1)
-    AR-->>Hook: Cross-chain imbalance ratio
-
-    Note over Hook: Check swap direction:<br/>worsening or rebalancing?
-
-    alt Rebalancing swap
-        Note over Hook: Fee = 0bp (free)
-    else Worsening swap
-        Hook->>FC: calculateFee(localRatio)
-        FC-->>Hook: Local fee
-        Hook->>FC: calculateFee(crossChainRatio)
-        FC-->>Hook: Cross-chain fee floor
-        Note over Hook: effectiveFee = max(local, crossChain)
-    end
-
-    Hook-->>PoolManager: Return fee override
-
-    PoolManager->>Hook: afterSwap()
-    Note over Hook: Emit SwapFeeApplied event
-    Hook-->>PoolManager: Done
-```
-
----
 
 ## Simulations: Real Depeg Events
 
 Each simulation uses a stablecoin pool with equal reserves and models the actual sell pressure observed in historical events. We compare total LP fees earned and net LP outcome under a standard flat-fee pool vs a DepegShield-protected pool. Numbers below are from on-chain Foundry simulations (`test/DepegScenario.t.sol`).
 
----
 
 ### 1. SVB / USDC Depeg | March 2023 | Recovery in 48h
 
 Circle disclosed \$3.3B in reserves at the failed Silicon Valley Bank. USDC dropped to \$0.87 (~13% depeg). On Aave, 3,400 positions were liquidated (\$24M, 86% in USDC). The peg recovered in 48 hours after the FDIC backstopped depositors.
 
 **Modeled scenario:** Gradual sell pressure over 48h pushes the pool to ~13% depeg (ratio 1.15x, Zone 5 Emergency). Then arbitrageurs rebalance as peg recovers.
-
 | Wave         | Pool Ratio After | Zone      | Standard Fee | DepegShield Fee |
 | ------------ | ---------------- | --------- | ------------ | --------------- |
 | Early sells  | 1.03x (3% depeg) | Stress   | 1bp          | 1bp             |
@@ -280,14 +150,12 @@ Circle disclosed \$3.3B in reserves at the failed Silicon Valley Bank. USDC drop
 
 The peg recovered. Both sets of LPs broke even on their positions. The difference: DepegShield LPs earned **65x more fees** for bearing the same 48 hours of existential risk. Zero-fee rebalancing also means recovery flow arrives faster since arbitrageurs face no friction when bringing back the scarce token.
 
----
 
 ### 2. USDT Whale Attack | June 2023 | Quick Recovery
 
 A single entity dumped 31.5M USDT across DEX pools in a coordinated sell. USDT depegged to \$0.997. Over \$120M in sell pressure was absorbed at flat fees. Recovery within hours.
 
 **Modeled scenario:** Whale dump hits the pool in 4 tranches, pushing it to ~4% pool tilt (ratio 1.04x, Zone 4 Crisis). Individual DEX pools tilted more than the aggregate market price suggests. Pool recovers within hours.
-
 | Wave       | Pool Ratio After   | Zone    | Standard Fee | DepegShield Fee |
 | ---------- | ------------------ | ------- | ------------ | --------------- |
 | Tranche 1  | 1.01x (1% tilt)   | Stress  | 1bp          | 1bp             |
@@ -305,14 +173,12 @@ A single entity dumped 31.5M USDT across DEX pools in a coordinated sell. USDT d
 
 This is where DepegShield doubles as an anti-manipulation mechanism. The fee curve makes pool manipulation at scale economically prohibitive: the whale pays 18x more in fees, all of which goes to LPs.
 
----
 
 ### 3. UST/LUNA Collapse | May 2022 | No Recovery
 
 UST lost its algorithmic peg and collapsed to \$0. Over \$50B in market cap was destroyed. LPs in UST pairs suffered total loss as positions converted entirely to a worthless token.
 
 **Modeled scenario:** Escalating panic over 72 hours, each wave bigger than the last. Token never recovers.
-
 | Wave          | Pool Ratio After     | Zone      | Standard Fee | DepegShield Fee  |
 | ------------- | -------------------- | --------- | ------------ | ---------------- |
 | Initial panic | 1.10x (10% depeg)   | Emergency | 1bp          | 1bp              |
@@ -328,7 +194,6 @@ UST lost its algorithmic peg and collapsed to \$0. Over \$50B in market cap was 
 
 DepegShield cannot save LPs from a total collapse. But it extracts **4,314x more fees** from the panic sellers who drained the pool. In a standard pool, LPs earned virtually nothing for absorbing a token going to zero. Under DepegShield, crisis fees provide meaningful partial compensation for impermanent loss.
 
----
 
 **[Moody's tracked 1,900+ depeg events through mid-2023](https://www.theblock.co/post/261727/large-cap-stablecoins-have-depegged-609-times-this-year-moodys-analytics-says), and they haven't stopped.** In October 2025, [\$3.8B in stablecoin value swung off parity](https://www.coingecko.com/learn/october-10-crypto-crash-explained) during a single flash crash that liquidated 1.6M traders. Across all three scenarios above, the pattern is the same: DepegShield LPs earn 18-4,314x more than standard pool LPs for bearing identical risk. In recovery scenarios, that's pure profit. In loss scenarios, it's meaningful damage offset.
 
@@ -360,7 +225,6 @@ Zhu (arXiv:2408.07227, 2024) decomposes stablecoin run risk into two components:
 
 > Paper: [Stablecoin Runs and Disclosure Policy in the Presence of Large Sales](https://arxiv.org/abs/2408.07227)
 
----
 
 ## Project Structure
 
@@ -396,7 +260,6 @@ depegShield/
 │       └── lib/                  # Fee curve math, simulation data
 ```
 
----
 
 ## Setup Guide
 
@@ -471,7 +334,6 @@ cast send --rpc-url https://lasna-rpc.rnk.dev/ --private-key "\$PRIVATE_KEY" \
 #   cast send <CALLBACK_PROXY> "depositTo(address)" <MONITOR_ADDR> --value 0.01ether
 ```
 
----
 
 ## Testnet Deployments
 

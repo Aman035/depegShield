@@ -1,0 +1,165 @@
+<svg width="100%" viewBox="0 0 680 380" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <style>
+    @keyframes traceCurve {
+      0%   { offset-distance: 0%; opacity: 0; }
+      3%   { opacity: 1; }
+      92%  { opacity: 1; }
+      100% { offset-distance: 100%; opacity: 0; }
+    }
+    @keyframes glowPulse {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
+    }
+    .tracer {
+      offset-path: path("M 80.0,269.1 L 108.0,269.1 L 136.0,265.4 L 164.0,262.9 L 192.0,255.2 L 220.0,242.4 L 248.0,224.4 L 276.0,215.9 L 304.0,190.2 L 332.0,147.5 L 360.0,87.6 L 402.0,81.4 L 430.0,70.5 L 458.0,54.1 L 486.0,42.0 L 640.0,42.0");
+      animation: traceCurve 6s ease-in-out infinite;
+    }
+    .tracer-glow {
+      offset-path: path("M 80.0,269.1 L 108.0,269.1 L 136.0,265.4 L 164.0,262.9 L 192.0,255.2 L 220.0,242.4 L 248.0,224.4 L 276.0,215.9 L 304.0,190.2 L 332.0,147.5 L 360.0,87.6 L 402.0,81.4 L 430.0,70.5 L 458.0,54.1 L 486.0,42.0 L 640.0,42.0");
+      animation: traceCurve 6s ease-in-out infinite, glowPulse 1.2s ease-in-out infinite;
+    }
+  </style>
+  <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
+    <feGaussianBlur stdDeviation="4" result="blur"/>
+    <feMerge>
+      <feMergeNode in="blur"/>
+      <feMergeNode in="SourceGraphic"/>
+    </feMerge>
+  </filter>
+  <linearGradient id="zone1fill" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="rgb(93,202,165)" stop-opacity="0.3"/>
+    <stop offset="100%" stop-color="rgb(93,202,165)" stop-opacity="0.02"/>
+  </linearGradient>
+  <linearGradient id="zone2fill" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="rgb(163,199,78)" stop-opacity="0.3"/>
+    <stop offset="100%" stop-color="rgb(163,199,78)" stop-opacity="0.02"/>
+  </linearGradient>
+  <linearGradient id="zone3fill" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="rgb(239,159,39)" stop-opacity="0.25"/>
+    <stop offset="100%" stop-color="rgb(239,159,39)" stop-opacity="0.02"/>
+  </linearGradient>
+  <linearGradient id="zone4fill" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="rgb(216,90,48)" stop-opacity="0.25"/>
+    <stop offset="100%" stop-color="rgb(216,90,48)" stop-opacity="0.02"/>
+  </linearGradient>
+  <linearGradient id="zone5fill" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="rgb(226,75,74)" stop-opacity="0.25"/>
+    <stop offset="100%" stop-color="rgb(226,75,74)" stop-opacity="0.02"/>
+  </linearGradient>
+</defs>
+
+<!-- Chart area: left=80, right=640, top=42, bottom=270 -->
+<!-- X: ratio 1.000..1.10 -> 80..640 (560px) -->
+<!-- Y: 0..250bp -> 270..42 (228px) -->
+
+<!-- Annotation at top -->
+<text x="340" y="20" text-anchor="middle" fill="rgb(194,192,182)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="11px" font-weight="400" font-style="italic">Fee charged on imbalance-worsening swaps (rebalancing swaps always pay 0bp)</text>
+
+<!-- Horizontal gridlines -->
+<line x1="80" y1="224.4" x2="640" y2="224.4" stroke="rgb(68,68,65)" stroke-width="0.3" stroke-dasharray="3,4"/>
+<line x1="80" y1="178.8" x2="640" y2="178.8" stroke="rgb(68,68,65)" stroke-width="0.3" stroke-dasharray="3,4"/>
+<line x1="80" y1="133.2" x2="640" y2="133.2" stroke="rgb(68,68,65)" stroke-width="0.3" stroke-dasharray="3,4"/>
+<line x1="80" y1="87.6" x2="640" y2="87.6" stroke="rgb(68,68,65)" stroke-width="0.3" stroke-dasharray="3,4"/>
+<line x1="80" y1="42.0" x2="640" y2="42.0" stroke="rgb(68,68,65)" stroke-width="0.3" stroke-dasharray="3,4"/>
+
+<!-- Vertical dashed zone boundary lines -->
+<line x1="108" y1="42" x2="108" y2="270" stroke="rgb(68,68,65)" stroke-width="0.6" stroke-dasharray="4,4"/>
+<line x1="136" y1="42" x2="136" y2="270" stroke="rgb(68,68,65)" stroke-width="0.6" stroke-dasharray="4,4"/>
+<line x1="248" y1="42" x2="248" y2="270" stroke="rgb(68,68,65)" stroke-width="0.6" stroke-dasharray="4,4"/>
+<line x1="360" y1="42" x2="360" y2="270" stroke="rgb(68,68,65)" stroke-width="0.6" stroke-dasharray="4,4"/>
+
+<!-- Zone 1 fill: 1.000-1.005 (x:80-108), flat at 1bp -->
+<path d="M 80,270 L 80,269.1 L 108,269.1 L 108,270 Z" fill="url(#zone1fill)"/>
+
+<!-- Zone 2 fill: 1.005-1.01 (x:108-136), linear 1bp-5bp -->
+<path d="M 108,270 L 108,269.1 L 136,265.4 L 136,270 Z" fill="url(#zone2fill)"/>
+
+<!-- Zone 3 fill: 1.01-1.03 (x:136-248), quadratic 5bp-50bp -->
+<polygon points="136.0,270 136.0,265.4 141.6,265.3 147.2,265.0 152.8,264.5 158.4,263.8 164.0,262.9 169.6,261.7 175.2,260.4 180.8,258.9 186.4,257.1 192.0,255.2 197.6,253.0 203.2,250.7 208.8,248.1 214.4,245.3 220.0,242.4 225.6,239.2 231.2,235.8 236.8,232.2 242.4,228.4 248.0,224.4 248.0,270" fill="url(#zone3fill)"/>
+
+<!-- Zone 4 fill: 1.03-1.05 (x:248-360), quadratic 50bp-200bp -->
+<polygon points="248.0,270 248.0,224.4 253.6,224.1 259.2,223.0 264.8,221.3 270.4,218.9 276.0,215.9 281.6,212.1 287.2,207.6 292.8,202.5 298.4,196.7 304.0,190.2 309.6,183.0 315.2,175.2 320.8,166.6 326.4,157.4 332.0,147.5 337.6,136.8 343.2,125.6 348.8,113.6 354.4,100.9 360.0,87.6 360.0,270" fill="url(#zone4fill)"/>
+
+<!-- Zone 5 fill: 1.05-1.10 (x:360-640), quadratic 200bp+ clamped at 250bp -->
+<polygon points="360.0,270 360.0,87.6 374.0,86.9 388.0,84.9 402.0,81.4 416.0,76.7 430.0,70.5 444.0,63.0 458.0,54.1 472.0,43.8 486.0,42.0 500.0,42.0 514.0,42.0 528.0,42.0 542.0,42.0 556.0,42.0 570.0,42.0 584.0,42.0 598.0,42.0 612.0,42.0 626.0,42.0 640.0,42.0 640.0,270" fill="url(#zone5fill)"/>
+
+<!-- Curve lines per zone -->
+
+<!-- Zone 1: flat at 1bp -->
+<line x1="80" y1="269.1" x2="108" y2="269.1" stroke="rgb(93,202,165)" stroke-width="2.2" stroke-linecap="round"/>
+
+<!-- Zone 2: linear ramp 1bp to 5bp -->
+<line x1="108" y1="269.1" x2="136" y2="265.4" stroke="rgb(163,199,78)" stroke-width="2.2" stroke-linecap="round"/>
+
+<!-- Zone 3: quadratic 5bp to 50bp -->
+<polyline points="136.0,265.4 141.6,265.3 147.2,265.0 152.8,264.5 158.4,263.8 164.0,262.9 169.6,261.7 175.2,260.4 180.8,258.9 186.4,257.1 192.0,255.2 197.6,253.0 203.2,250.7 208.8,248.1 214.4,245.3 220.0,242.4 225.6,239.2 231.2,235.8 236.8,232.2 242.4,228.4 248.0,224.4" fill="none" stroke="rgb(239,159,39)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Zone 4: quadratic 50bp to 200bp -->
+<polyline points="248.0,224.4 253.6,224.1 259.2,223.0 264.8,221.3 270.4,218.9 276.0,215.9 281.6,212.1 287.2,207.6 292.8,202.5 298.4,196.7 304.0,190.2 309.6,183.0 315.2,175.2 320.8,166.6 326.4,157.4 332.0,147.5 337.6,136.8 343.2,125.6 348.8,113.6 354.4,100.9 360.0,87.6" fill="none" stroke="rgb(216,90,48)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Zone 5: quadratic 200bp+, clamped at chart top -->
+<polyline points="360.0,87.6 374.0,86.9 388.0,84.9 402.0,81.4 416.0,76.7 430.0,70.5 444.0,63.0 458.0,54.1 472.0,43.8 486.0,42.0 500.0,42.0 514.0,42.0 528.0,42.0 542.0,42.0 556.0,42.0 570.0,42.0 584.0,42.0 598.0,42.0 612.0,42.0 626.0,42.0 640.0,42.0" fill="none" stroke="rgb(226,75,74)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Axes -->
+<line x1="80" y1="270" x2="640" y2="270" stroke="rgb(180,178,169)" stroke-width="0.8"/>
+<line x1="80" y1="270" x2="80" y2="42" stroke="rgb(180,178,169)" stroke-width="0.8"/>
+
+<!-- Y-axis labels -->
+<text x="72" y="273" text-anchor="end" fill="rgb(180,178,169)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="10px">0</text>
+<text x="72" y="228" text-anchor="end" fill="rgb(180,178,169)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="10px">50</text>
+<text x="72" y="182" text-anchor="end" fill="rgb(180,178,169)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="10px">100</text>
+<text x="72" y="137" text-anchor="end" fill="rgb(180,178,169)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="10px">150</text>
+<text x="72" y="91" text-anchor="end" fill="rgb(180,178,169)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="10px">200</text>
+<text x="72" y="46" text-anchor="end" fill="rgb(180,178,169)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="10px">250+</text>
+
+<!-- Y-axis title -->
+<text x="18" y="156" text-anchor="middle" transform="rotate(-90,18,156)" fill="rgb(250,249,245)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="11px" font-weight="500">Fee (bps)</text>
+
+<!-- X-axis tick labels -->
+<text x="80" y="284" text-anchor="middle" fill="rgb(180,178,169)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="9.5px">1.000x</text>
+<text x="108" y="284" text-anchor="middle" fill="rgb(180,178,169)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="9.5px">1.005x</text>
+<text x="136" y="284" text-anchor="middle" fill="rgb(180,178,169)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="9.5px">1.01x</text>
+<text x="248" y="284" text-anchor="middle" fill="rgb(180,178,169)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="9.5px">1.03x</text>
+<text x="360" y="284" text-anchor="middle" fill="rgb(180,178,169)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="9.5px">1.05x</text>
+<text x="640" y="284" text-anchor="middle" fill="rgb(180,178,169)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="9.5px">1.10x</text>
+
+<!-- X-axis title -->
+<text x="360" y="298" text-anchor="middle" fill="rgb(250,249,245)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="11px" font-weight="500">Imbalance Ratio</text>
+
+<!-- Fee value annotations on curve -->
+<text x="94" y="263" text-anchor="middle" fill="rgb(93,202,165)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="9.5px" font-weight="500">1bp</text>
+<text x="141" y="259" text-anchor="start" fill="rgb(163,199,78)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="9.5px" font-weight="500">5bp</text>
+<text x="253" y="218" text-anchor="start" fill="rgb(239,159,39)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="9.5px" font-weight="500">50bp</text>
+<text x="365" y="82" text-anchor="start" fill="rgb(216,90,48)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="9.5px" font-weight="500">200bp</text>
+<text x="500" y="37" text-anchor="middle" fill="rgb(226,75,74)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="9.5px" font-weight="500">capped at 50%</text>
+
+<!-- Zone labels below x-axis -->
+<rect x="80" y="308" width="28" height="16" rx="3" fill="rgb(93,202,165)" fill-opacity="0.12" stroke="rgb(93,202,165)" stroke-width="0.5" stroke-opacity="0.35"/>
+<text x="94" y="319" text-anchor="middle" fill="rgb(93,202,165)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="7.5px" font-weight="600" letter-spacing="0.5px">STABLE</text>
+<text x="94" y="332" text-anchor="middle" fill="rgb(93,202,165)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="7px" font-weight="400" opacity="0.7">1bp</text>
+
+<rect x="108" y="308" width="28" height="16" rx="3" fill="rgb(163,199,78)" fill-opacity="0.12" stroke="rgb(163,199,78)" stroke-width="0.5" stroke-opacity="0.35"/>
+<text x="122" y="319" text-anchor="middle" fill="rgb(163,199,78)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="7.5px" font-weight="600" letter-spacing="0.5px">DRIFT</text>
+<text x="122" y="332" text-anchor="middle" fill="rgb(163,199,78)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="7px" font-weight="400" opacity="0.7">1-5bp</text>
+
+<rect x="164" y="308" width="56" height="16" rx="3" fill="rgb(239,159,39)" fill-opacity="0.12" stroke="rgb(239,159,39)" stroke-width="0.5" stroke-opacity="0.35"/>
+<text x="192" y="319" text-anchor="middle" fill="rgb(239,159,39)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="7.5px" font-weight="600" letter-spacing="0.5px">STRESS</text>
+<text x="192" y="332" text-anchor="middle" fill="rgb(239,159,39)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="7px" font-weight="400" opacity="0.7">5-50bp</text>
+
+<rect x="276" y="308" width="56" height="16" rx="3" fill="rgb(216,90,48)" fill-opacity="0.12" stroke="rgb(216,90,48)" stroke-width="0.5" stroke-opacity="0.35"/>
+<text x="304" y="319" text-anchor="middle" fill="rgb(216,90,48)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="7.5px" font-weight="600" letter-spacing="0.5px">CRISIS</text>
+<text x="304" y="332" text-anchor="middle" fill="rgb(216,90,48)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="7px" font-weight="400" opacity="0.7">50-200bp</text>
+
+<rect x="440" y="308" width="80" height="16" rx="3" fill="rgb(226,75,74)" fill-opacity="0.12" stroke="rgb(226,75,74)" stroke-width="0.5" stroke-opacity="0.35"/>
+<text x="480" y="319" text-anchor="middle" fill="rgb(226,75,74)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="7.5px" font-weight="600" letter-spacing="0.5px">EMERGENCY</text>
+<text x="480" y="332" text-anchor="middle" fill="rgb(226,75,74)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="7px" font-weight="400" opacity="0.7">200bp+ (max 50%)</text>
+
+<!-- Fee formula -->
+<text x="340" y="360" text-anchor="middle" fill="rgb(180,178,169)" font-family="'Anthropic Sans',-apple-system,'system-ui','Segoe UI',sans-serif" font-size="10px" font-weight="400">fee(r) = 1bp (stable) &#x2192; 1-5bp (drift) &#x2192; 5-50bp (stress) &#x2192; 50-200bp (crisis) &#x2192; 200bp+ (emergency)</text>
+
+<!-- Animated tracer dot -->
+<circle r="12" fill="white" fill-opacity="0.08" filter="url(#glow)" class="tracer-glow"/>
+<circle r="4" fill="white" fill-opacity="0.95" filter="url(#glow)" class="tracer"/>
+
+</svg>
