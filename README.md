@@ -48,7 +48,15 @@ A flat 1bp fee applies regardless of market conditions:
 
 The LP earns \$500 in both cases. In the second case, they've absorbed \$5M of a potentially collapsing asset. That's not a fee. It's a rounding error on the risk they're taking.
 
-**The result:** LPs in stablecoin pools are involuntary insurance underwriters. They provide exit liquidity to panicking traders at the exact moment they face maximum downside, and they're compensated with effectively nothing. The expected value of providing liquidity through a depeg event is negative.
+**4. Depegs propagate cross-chain; pools are blind to it.**
+
+Stablecoins trade on dozens of chains simultaneously. A depeg shows up first on the highest-volume pools -- typically Ethereum mainnet -- where the deepest liquidity means informed sellers hit first. Pools on other chains (Base, Arbitrum, etc.) have zero visibility into what's happening elsewhere. Their local reserves still look perfectly balanced.
+
+Cross-chain arbitrageurs exploit this information lag. They bridge the depegging token to a chain where the pool hasn't reacted yet, extract the paired "safe" token at near-par prices, and exit before the local pool has any signal. Each chain's pool is independently blind, creating a cascading extraction pattern where arbs drain one chain after another in sequence.
+
+This is not hypothetical. During the SVB/USDC event in March 2023, DEX pools on L2s were still trading USDC near par while Ethereum mainnet pools were already in crisis at \$0.87. The information lag between chains was free money for anyone fast enough to bridge.
+
+**The result:** LPs in stablecoin pools are involuntary insurance underwriters with no information edge. They provide exit liquidity to panicking traders and cross-chain arbitrageurs at the exact moment they face maximum downside, compensated with effectively nothing. The expected value of providing liquidity through a depeg event is negative.
 
 ---
 
@@ -162,18 +170,32 @@ Depeg events don't start on one chain. When a stablecoin loses its peg, higher-v
 
 DepegShield closes this gap using [Reactive Network](https://reactive.network/), a decentralized cross-chain event monitoring system.
 
-```
-  Source Chains               Reactive Network              Protected Pool's Chain
- ┌──────────────┐            ┌──────────────────┐          ┌───────────────────┐
- │ Ethereum,    │            │                  │          │                   │
- │ Base,        │  Swap      │ ReactiveMonitor  │ callback │  AlertReceiver    │
- │ Arbitrum,    │──events──▶ │ (RSC)            │────────▶ │       │           │
- │ any chain... │            │ tracks cumulative│          │       ▼           │
- │              │            │ imbalance ratio  │          │  DepegShieldHook  │
- │ pool depeg   │            │                  │          │  fees tightened   │
- │ detected     │            │                  │          │  BEFORE arbs      │
- └──────────────┘            └──────────────────┘          │  arrive           │
-                                                           └───────────────────┘
+```mermaid
+flowchart LR
+    subgraph Sources["Source Chains"]
+        ETH["Ethereum"]
+        BASE["Base"]
+        ARB["Arbitrum"]
+        OTHER["any chain..."]
+    end
+
+    subgraph Reactive["Reactive Network"]
+        RM["ReactiveMonitor\n(RSC)\n\nTracks cumulative\nimbalance ratio"]
+    end
+
+    subgraph Protected["Protected Pool's Chain"]
+        AR["AlertReceiver"]
+        HOOK["DepegShieldHook"]
+        RESULT["Fees tightened\nBEFORE arbs arrive"]
+    end
+
+    ETH -- "Swap events" --> RM
+    BASE -- "Swap events" --> RM
+    ARB -- "Swap events" --> RM
+    OTHER -- "Swap events" --> RM
+    RM -- "Cross-chain\ncallback" --> AR
+    AR --> HOOK
+    HOOK --> RESULT
 ```
 
 - **ReactiveMonitor** (Reactive Network) - Subscribes to swap events on stablecoin pools across any supported chain. Tracks cumulative sell pressure over a rolling window. When imbalance crosses a configurable threshold, it fires a cross-chain callback to the protected pool's chain.
@@ -183,6 +205,50 @@ DepegShield closes this gap using [Reactive Network](https://reactive.network/),
 No off-chain bots. No centralized keepers. Fully on-chain. The source chains to monitor and the alert thresholds are configurable per deployment.
 
 **How this helps LPs:** The #1 way LPs get hurt is information asymmetry: someone knows the token is depegging, the LP doesn't. Cross-chain alerts close that gap. LPs are protected before the first arbitrageur even arrives.
+
+### Hook Flow
+
+The full decision path for every swap, from initiation to fee override:
+
+```mermaid
+sequenceDiagram
+    participant Swapper
+    participant PoolManager
+    participant Hook as DepegShieldHook
+    participant AR as AlertReceiver
+    participant FC as FeeCurve
+
+    Swapper->>PoolManager: swap()
+    PoolManager->>Hook: beforeSwap()
+
+    Hook->>PoolManager: Read sqrtPriceX96 + liquidity
+    PoolManager-->>Hook: Pool state
+
+    Note over Hook: Compute virtual reserves<br/>reserve₀ = L × 2⁹⁶ / sqrtPrice<br/>reserve₁ = L × sqrtPrice / 2⁹⁶
+
+    Note over Hook: Compute imbalance ratio<br/>ratio = max / min
+
+    Hook->>AR: getLatestAlert(token0, token1)
+    AR-->>Hook: Cross-chain imbalance ratio
+
+    Note over Hook: Check swap direction:<br/>worsening or rebalancing?
+
+    alt Rebalancing swap
+        Note over Hook: Fee = 0bp (free)
+    else Worsening swap
+        Hook->>FC: calculateFee(localRatio)
+        FC-->>Hook: Local fee
+        Hook->>FC: calculateFee(crossChainRatio)
+        FC-->>Hook: Cross-chain fee floor
+        Note over Hook: effectiveFee = max(local, crossChain)
+    end
+
+    Hook-->>PoolManager: Return fee override
+
+    PoolManager->>Hook: afterSwap()
+    Note over Hook: Emit SwapFeeApplied event
+    Hook-->>PoolManager: Done
+```
 
 ---
 
