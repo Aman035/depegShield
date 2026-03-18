@@ -16,9 +16,10 @@ import { generateCurveData, ZONE1_UPPER, ZONE2_UPPER, ZONE3_UPPER, ZONE4_UPPER, 
 interface FeeCurveChartProps {
   currentRatio?: number;
   height?: number;
+  crossChainFloorBps?: number;
 }
 
-export function FeeCurveChart({ currentRatio, height = 340 }: FeeCurveChartProps) {
+export function FeeCurveChart({ currentRatio, height = 340, crossChainFloorBps }: FeeCurveChartProps) {
   // Default range covers zones 1-5 with some headroom; extend if current ratio exceeds
   const maxRange = Math.max(11000, currentRatio ? currentRatio + 200 : 11000);
   const data = useMemo(() => generateCurveData(5, 10000, maxRange), [maxRange]);
@@ -88,6 +89,18 @@ export function FeeCurveChart({ currentRatio, height = 340 }: FeeCurveChartProps
           {/* Current position */}
           {currentRatio && (
             <ReferenceLine x={currentRatio} stroke="var(--green)" strokeWidth={1.5} />
+          )}
+
+          {/* Cross-chain fee floor */}
+          {crossChainFloorBps != null && (
+            <ReferenceLine
+              y={crossChainFloorBps}
+              stroke="var(--amber)"
+              strokeDasharray="6 4"
+              strokeWidth={1.5}
+              strokeOpacity={0.6}
+              label={{ value: `X-Chain Floor ${crossChainFloorBps.toFixed(1)}bp`, position: "right", fill: "var(--amber)", fontSize: 11, fontFamily: "var(--font-display)" }}
+            />
           )}
 
           <XAxis

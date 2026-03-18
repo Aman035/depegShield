@@ -79,187 +79,247 @@ export function CrossChainAlert({
   const zoneColor = zone ? getZoneColor(zone) : "var(--green)";
 
   const otherChains = MONITORED_CHAINS.filter((c) => c !== chainId);
+  const depegPct = ((crossChainRatio - 10000) / 100).toFixed(1);
+
+  if (hasAlert) {
+    return (
+      <div
+        className="rounded-xl overflow-hidden relative"
+        style={{
+          border: `1px solid color-mix(in srgb, ${zoneColor} 25%, var(--border))`,
+          background: `linear-gradient(135deg, color-mix(in srgb, ${zoneColor} 4%, var(--bg-raised)) 0%, var(--bg-raised) 100%)`,
+        }}
+      >
+        {/* Scanning line animation */}
+        <div
+          className="absolute inset-0 pointer-events-none overflow-hidden"
+          style={{ opacity: 0.06 }}
+        >
+          <div
+            className="absolute w-full h-[1px] animate-scan"
+            style={{ background: `linear-gradient(90deg, transparent, ${zoneColor}, transparent)` }}
+          />
+        </div>
+
+        {/* Header bar */}
+        <div
+          className="px-5 py-3 flex items-center justify-between border-b"
+          style={{ borderColor: `color-mix(in srgb, ${zoneColor} 15%, var(--border))` }}
+        >
+          <div className="flex items-center gap-3">
+            {/* Shield icon with pulse ring */}
+            <div className="relative">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M8 1L14 4.5V9.5C14 12.5 11 14.5 8 15.5C5 14.5 2 12.5 2 9.5V4.5L8 1Z"
+                  stroke={zoneColor}
+                  strokeWidth="1.2"
+                  strokeLinejoin="round"
+                  fill={`color-mix(in srgb, ${zoneColor} 15%, transparent)`}
+                />
+                <path d="M6 8L7.5 9.5L10 6.5" stroke={zoneColor} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span
+                className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full animate-pulse"
+                style={{ backgroundColor: zoneColor }}
+              />
+            </div>
+            <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[var(--text-secondary)]">
+              Cross-Chain Shield
+            </span>
+          </div>
+
+          <div
+            className="flex items-center gap-2 px-2.5 py-1 rounded font-mono text-[11px] uppercase tracking-wider"
+            style={{
+              color: zoneColor,
+              background: `color-mix(in srgb, ${zoneColor} 10%, transparent)`,
+              border: `1px solid color-mix(in srgb, ${zoneColor} 20%, transparent)`,
+            }}
+          >
+            <span className="relative flex h-2 w-2">
+              <span
+                className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-40"
+                style={{ backgroundColor: zoneColor }}
+              />
+              <span
+                className="relative inline-flex rounded-full h-2 w-2"
+                style={{ backgroundColor: zoneColor }}
+              />
+            </span>
+            {zone ? getZoneLabel(zone) : "Alert"}
+          </div>
+        </div>
+
+        {/* Content: two-column asymmetric layout */}
+        <div className="px-5 py-4">
+          {/* Source info line */}
+          <div className="flex items-baseline gap-2 mb-4">
+            <span className="font-mono text-[11px] text-[var(--text-dim)] uppercase tracking-wider">Origin</span>
+            <span className="font-mono text-[13px] font-medium" style={{ color: zoneColor }}>
+              {sourceChainName}
+            </span>
+            <span className="font-mono text-[11px] text-[var(--text-dim)]">
+              -- {depegPct}% deviation detected
+            </span>
+          </div>
+
+          {/* Metrics row */}
+          <div className="flex items-end gap-8">
+            {/* Hero metric: ratio */}
+            <div>
+              <p className="font-mono text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1">
+                Source Ratio
+              </p>
+              <p className="font-mono text-[36px] leading-none font-semibold tracking-tight" style={{ color: zoneColor }}>
+                {ratioToMultiplier(crossChainRatio)}
+              </p>
+            </div>
+
+            {/* Divider */}
+            <div
+              className="h-12 w-px self-center"
+              style={{ background: `color-mix(in srgb, ${zoneColor} 20%, transparent)` }}
+            />
+
+            {/* Fee floor */}
+            <div>
+              <p className="font-mono text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1">
+                Fee Floor
+              </p>
+              <p className="font-mono text-[36px] leading-none font-semibold tracking-tight" style={{ color: zoneColor }}>
+                {feeFloorBps.toFixed(1)}
+                <span className="text-[14px] font-normal text-[var(--text-dim)] ml-1">bps</span>
+              </p>
+            </div>
+
+            {/* Spacer + impact note */}
+            <div className="ml-auto self-end pb-1">
+              <p className="font-mono text-[11px] text-[var(--text-dim)] text-right leading-relaxed max-w-[260px]">
+                Worsening swaps pay <span className="text-[var(--text-secondary)]">{feeFloorBps.toFixed(1)} bps min</span>.
+                <br />
+                Rebalancing swaps remain free.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom accent line */}
+        <div
+          className="h-[2px]"
+          style={{
+            background: `linear-gradient(90deg, transparent 0%, ${zoneColor} 20%, ${zoneColor} 80%, transparent 100%)`,
+            opacity: 0.3,
+          }}
+        />
+
+        {/* Inline style for scan animation */}
+        <style jsx>{`
+          @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+          }
+          .animate-scan {
+            animation: scan 3s linear infinite;
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // ---- ALL CLEAR ----
+  const currentChainName = CHAIN_NAMES[chainId] ?? "Unknown";
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-raised)]/40 backdrop-blur-sm overflow-hidden">
       {/* Header */}
-      <div className="px-5 py-3.5 border-b border-[var(--border)] flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+      <div className="px-5 py-3 border-b border-[var(--border)] flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path
-              d="M8 1L14.5 5v6L8 15 1.5 11V5L8 1Z"
-              stroke={hasAlert ? zoneColor : "var(--green)"}
+              d="M8 1L14 4.5V9.5C14 12.5 11 14.5 8 15.5C5 14.5 2 12.5 2 9.5V4.5L8 1Z"
+              stroke="var(--green)"
               strokeWidth="1.2"
               strokeLinejoin="round"
               fill="none"
-              strokeOpacity="0.6"
+              strokeOpacity="0.4"
             />
-            <circle
-              cx="8"
-              cy="8"
-              r="2"
-              fill={hasAlert ? zoneColor : "var(--green)"}
-              fillOpacity="0.4"
-            />
+            <path d="M6 8L7.5 9.5L10 6.5" stroke="var(--green)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.5" />
           </svg>
-          <span className="font-mono text-[13px] uppercase tracking-wider text-[var(--text-secondary)]">
+          <span className="font-mono text-[12px] uppercase tracking-[0.15em] text-[var(--text-secondary)]">
             Cross-Chain Shield
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          {hasAlert ? (
-            <span
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[12px] font-mono"
-              style={{
-                borderColor: `color-mix(in srgb, ${zoneColor} 30%, transparent)`,
-                backgroundColor: `color-mix(in srgb, ${zoneColor} 10%, transparent)`,
-                color: zoneColor,
-              }}
-            >
-              <span
-                className="w-1.5 h-1.5 rounded-full animate-pulse"
-                style={{ backgroundColor: zoneColor }}
-              />
-              Alert Active
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--green)]/10 border border-[var(--green)]/20 text-[12px] font-mono text-[var(--green)]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)]" />
-              All Clear
-            </span>
-          )}
-        </div>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[var(--green)]/8 border border-[var(--green)]/15 text-[11px] font-mono uppercase tracking-wider text-[var(--green)]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)]" />
+          Nominal
+        </span>
       </div>
 
-      {hasAlert ? (
-        /* ---- ALERT ACTIVE: prominent details ---- */
-        <div className="p-5 space-y-4">
-          {/* Main alert banner */}
-          <div
-            className="rounded-lg border px-5 py-4"
-            style={{
-              borderColor: `color-mix(in srgb, ${zoneColor} 30%, transparent)`,
-              backgroundColor: `color-mix(in srgb, ${zoneColor} 6%, transparent)`,
-            }}
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <span
-                className="w-2 h-2 rounded-full animate-pulse"
-                style={{ backgroundColor: zoneColor }}
-              />
-              <span
-                className="font-mono text-[13px] uppercase tracking-wider font-medium"
-                style={{ color: zoneColor }}
-              >
-                {zone ? getZoneLabel(zone) : "Alert"} -- Depeg Detected on {sourceChainName}
-              </span>
-            </div>
-
-            {/* Key metrics in a clean 2x2 grid */}
-            <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-              <div>
-                <p className="text-[11px] font-mono text-[var(--text-dim)] uppercase tracking-wider mb-1">
-                  Source Imbalance
-                </p>
-                <p className="text-2xl font-mono font-semibold" style={{ color: zoneColor }}>
-                  {ratioToMultiplier(crossChainRatio)}
-                </p>
-              </div>
-              <div>
-                <p className="text-[11px] font-mono text-[var(--text-dim)] uppercase tracking-wider mb-1">
-                  Fee Floor Applied
-                </p>
-                <p className="text-2xl font-mono font-semibold" style={{ color: zoneColor }}>
-                  {feeFloorBps.toFixed(1)} <span className="text-sm font-normal text-[var(--text-secondary)]">bps</span>
-                </p>
-              </div>
-              <div>
-                <p className="text-[11px] font-mono text-[var(--text-dim)] uppercase tracking-wider mb-1">
-                  Source Chain
-                </p>
-                <p className="text-[14px] font-mono font-medium text-[var(--text)]">
-                  {sourceChainName}
-                </p>
-              </div>
-              <div>
-                <p className="text-[11px] font-mono text-[var(--text-dim)] uppercase tracking-wider mb-1">
-                  Status
-                </p>
-                <p className="text-[14px] font-mono font-medium" style={{ color: zoneColor }}>
-                  Active until recovered
-                </p>
-              </div>
-            </div>
-
-            {/* Fee floor bar */}
-            <div className="mt-4 pt-3 border-t" style={{ borderColor: `color-mix(in srgb, ${zoneColor} 15%, transparent)` }}>
-              <div className="flex items-center justify-between text-[11px] font-mono text-[var(--text-dim)] mb-1.5">
-                <span>Fee floor impact</span>
-                <span style={{ color: zoneColor }}>
-                  {feeFloorBps.toFixed(1)} bps minimum on worsening swaps
-                </span>
-              </div>
-              <div className="h-1.5 rounded-full bg-[var(--bg)] overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${Math.min(100, (feeFloorBps / 200) * 100)}%`,
-                    backgroundColor: zoneColor,
-                    opacity: 0.7,
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Explanation */}
-          <p className="text-[12px] text-[var(--text-dim)] leading-relaxed">
-            Depeg detected on{" "}
-            <span style={{ color: zoneColor }}>{sourceChainName}</span>. This
-            pool preemptively charges{" "}
-            <span className="text-[var(--text-secondary)]">
-              {feeFloorBps.toFixed(1)} bps minimum
-            </span>{" "}
-            on imbalance-worsening swaps to protect LPs. Rebalancing swaps remain fee-free.
-          </p>
-        </div>
-      ) : (
-        /* ---- ALL CLEAR: compact monitoring status ---- */
-        <div className="px-5 py-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-[11px] font-mono text-[var(--text-dim)] uppercase tracking-wider">
-              Monitoring
-            </span>
-            {MONITORED_CHAINS.map((cId) => {
-              const isSelf = cId === chainId;
-              const explorerUrl = EXPLORER_URLS[cId];
-              const alertAddr = ALERT_RECEIVER_ADDRESSES[cId];
-              return (
+      {/* Network topology */}
+      <div className="px-5 py-4">
+        {/* Chain nodes with connection lines */}
+        <div className="flex items-center justify-between mb-4">
+          {MONITORED_CHAINS.map((cId, i) => {
+            const isSelf = cId === chainId;
+            const explorerUrl = EXPLORER_URLS[cId];
+            const alertAddr = ALERT_RECEIVER_ADDRESSES[cId];
+            return (
+              <div key={cId} className="flex items-center" style={{ flex: 1 }}>
+                {/* Node */}
                 <a
-                  key={cId}
                   href={explorerUrl && alertAddr ? `${explorerUrl}/address/${alertAddr}` : "#"}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[12px] font-mono transition-colors ${
-                    isSelf
-                      ? "border-[var(--green)]/30 bg-[var(--green)]/5 text-[var(--green)]"
-                      : "border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--green)]/30 hover:text-[var(--green)]"
-                  }`}
+                  className={`flex flex-col items-center gap-1.5 group transition-colors flex-1 ${isSelf ? "" : "opacity-70 hover:opacity-100"}`}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)]" />
-                  {CHAIN_NAMES[cId]}{isSelf ? " (this pool)" : ""}
+                  {/* Circle node */}
+                  <div
+                    className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${
+                      isSelf
+                        ? "border-[var(--green)]/40 bg-[var(--green)]/10"
+                        : "border-[var(--border)] bg-[var(--bg)] group-hover:border-[var(--green)]/30"
+                    }`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        isSelf ? "bg-[var(--green)] pulse-dot" : "bg-[var(--green)]/50"
+                      }`}
+                    />
+                  </div>
+                  <span className={`font-mono text-[11px] ${isSelf ? "text-[var(--green)]" : "text-[var(--text-dim)] group-hover:text-[var(--text-secondary)]"}`}>
+                    {CHAIN_NAMES[cId]?.replace(" Sepolia", "")}
+                  </span>
+                  {isSelf && (
+                    <span className="font-mono text-[9px] text-[var(--green)]/60 uppercase tracking-wider -mt-0.5">
+                      This Pool
+                    </span>
+                  )}
                 </a>
-              );
-            })}
-          </div>
-          <p className="text-[11px] text-[var(--text-dim)] mt-3 leading-relaxed">
-            Reactive Network monitors mUSDC/mUSDT pools across all 3 chains.
-            If a depeg is detected on{" "}
-            {otherChains.map((c) => CHAIN_NAMES[c]).join(" or ")},
-            fees tighten here automatically before arbitrageurs arrive.
-          </p>
+                {/* Connection line between nodes */}
+                {i < MONITORED_CHAINS.length - 1 && (
+                  <div className="flex-1 h-px bg-[var(--green)]/10 mx-2 relative -mt-4">
+                    <div className="absolute inset-0 bg-[var(--green)]/20" style={{
+                      maskImage: "linear-gradient(90deg, transparent 0%, black 30%, black 70%, transparent 100%)",
+                      WebkitMaskImage: "linear-gradient(90deg, transparent 0%, black 30%, black 70%, transparent 100%)",
+                    }} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-      )}
+
+        {/* Info line */}
+        <div className="flex items-center justify-between pt-3 border-t border-[var(--border)]">
+          <p className="font-mono text-[11px] text-[var(--text-dim)] leading-relaxed">
+            Depeg on {otherChains.map((c) => CHAIN_NAMES[c]?.replace(" Sepolia", "")).join(" or ")} triggers automatic fee floor on {currentChainName?.replace(" Sepolia", "")}
+          </p>
+          <span className="font-mono text-[10px] text-[var(--text-dim)] shrink-0 ml-4">
+            Reactive Network
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

@@ -302,12 +302,17 @@ export default function ExplorePage() {
               <PoolHealthGauge ratio={ratio} reserve0={reserve0} reserve1={reserve1} />
 
               {/* Worsening Fee */}
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-raised)]/40 backdrop-blur-sm p-6 flex flex-col">
+              <div className={`rounded-xl border bg-[var(--bg-raised)]/40 backdrop-blur-sm p-6 flex flex-col ${crossChainFloorActive ? "border-[var(--amber)]/30" : "border-[var(--border)]"}`}>
                 <div className="flex items-center gap-2 mb-4">
                   <span className="w-6 h-6 rounded-md flex items-center justify-center" style={{ backgroundColor: `color-mix(in srgb, ${effectiveZoneColor} 15%, transparent)` }}>
                     <svg width="12" height="12" viewBox="0 0 10 10"><path d="M5 2L8 7H2L5 2Z" fill={effectiveZoneColor} /></svg>
                   </span>
                   <p className="text-[12px] font-mono text-[var(--text-secondary)] uppercase tracking-wider">Worsening Fee</p>
+                  {crossChainFloorActive && (
+                    <span className="ml-auto text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--amber)]/10 text-[var(--amber)] border border-[var(--amber)]/20">
+                      X-Chain Floor
+                    </span>
+                  )}
                 </div>
                 <p className="text-5xl font-mono font-semibold tracking-tight" style={{ color: effectiveZoneColor }}>
                   {effectiveFeeBps?.toFixed(1)}
@@ -315,25 +320,34 @@ export default function ExplorePage() {
                 </p>
                 <p className="text-[14px] text-[var(--text-secondary)] mt-4 leading-relaxed flex-1">
                   {crossChainFloorActive
-                    ? "Cross-chain fee floor active (depeg detected on another chain)"
+                    ? "Depeg detected on another chain. Fee elevated preemptively to protect LPs."
                     : "Current fee for swaps that increase pool imbalance"}
                 </p>
                 <div className="mt-4 pt-4 border-t border-[var(--border)] space-y-2">
                   <div className="flex items-center justify-between text-[13px] font-mono">
-                    <span className="text-[var(--text-secondary)]">Zone</span>
+                    <span className="text-[var(--text-secondary)]">Local zone</span>
                     <span className="font-medium" style={{ color: zoneColor }}>{zone ? getZoneLabel(zone) : ""}</span>
                   </div>
                   {crossChainFloorActive && (
-                    <div className="flex items-center justify-between text-[13px] font-mono">
-                      <span className="text-[var(--text-secondary)]">Local fee</span>
-                      <span className="text-[var(--text-dim)]">{localFeeBps?.toFixed(1)} bps</span>
-                    </div>
-                  )}
-                  {crossChainFloorActive && (
-                    <div className="flex items-center justify-between text-[13px] font-mono">
-                      <span className="text-[var(--text-secondary)]">X-chain floor</span>
-                      <span className="font-medium" style={{ color: effectiveZoneColor }}>{crossChainFeeBps.toFixed(1)} bps</span>
-                    </div>
+                    <>
+                      <div className="flex items-center justify-between text-[13px] font-mono">
+                        <span className="text-[var(--text-secondary)]">Local fee</span>
+                        <span className="text-[var(--text-dim)]">{localFeeBps?.toFixed(1)} bps</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[13px] font-mono">
+                        <span className="text-[var(--text-secondary)]">X-chain floor</span>
+                        <span className="font-medium" style={{ color: effectiveZoneColor }}>{crossChainFeeBps.toFixed(1)} bps</span>
+                      </div>
+                      <div className="mt-1 h-1.5 rounded-full bg-[var(--border)] overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${Math.min((crossChainFeeBps / 500) * 100, 100)}%`,
+                            background: `linear-gradient(90deg, var(--amber), ${effectiveZoneColor})`,
+                          }}
+                        />
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
@@ -351,9 +365,13 @@ export default function ExplorePage() {
                   <span className="text-base font-normal text-[var(--text-secondary)] ml-1.5">bps</span>
                 </p>
                 <p className="text-[14px] text-[var(--text-secondary)] mt-4 leading-relaxed flex-1">
-                  {ratio > ZONE1_UPPER ? "Zero fee to incentivize recovery swaps" : "Stable zone, standard flat rate"}
+                  {ratio > ZONE1_UPPER
+                    ? "Zero fee to incentivize recovery swaps"
+                    : crossChainFloorActive
+                      ? "Pool is locally balanced. Rebalancing incentive activates when local reserves tilt."
+                      : "Stable zone, standard flat rate"}
                 </p>
-                <div className="mt-4 pt-4 border-t border-[var(--border)]">
+                <div className="mt-4 pt-4 border-t border-[var(--border)] space-y-2">
                   <div className="flex items-center justify-between text-[13px] font-mono">
                     <span className="text-[var(--text-secondary)]">Incentive</span>
                     <span className="font-medium text-[var(--green)]">{ratio > ZONE1_UPPER ? "FREE SWAP" : "FLAT RATE"}</span>
@@ -387,12 +405,18 @@ export default function ExplorePage() {
                   <span className="text-[var(--text-secondary)]">Current position</span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-white" />
-                    <span className="font-medium" style={{ color: effectiveZoneColor }}>{ratioToMultiplier(ratio)} / {effectiveFeeBps?.toFixed(1)} bps</span>
+                    <span className="font-medium" style={{ color: zoneColor }}>{ratioToMultiplier(ratio)} / {localFeeBps?.toFixed(1)} bps</span>
                   </span>
+                  {crossChainFloorActive && (
+                    <span className="flex items-center gap-1.5 text-[var(--amber)]">
+                      <span className="text-[var(--text-dim)]">|</span>
+                      Floor {crossChainFeeBps.toFixed(1)} bps
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="p-5">
-                <FeeCurveChart currentRatio={ratio} height={340} />
+                <FeeCurveChart currentRatio={ratio} height={340} crossChainFloorBps={crossChainFloorActive ? crossChainFeeBps : undefined} />
               </div>
             </div>
 
