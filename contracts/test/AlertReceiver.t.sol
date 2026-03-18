@@ -23,42 +23,43 @@ contract AlertReceiverTest is Test {
 
     function test_alertReceiver_setAndGet() public {
         vm.prank(callbackSender);
-        receiver.handleAlert(address(0), pairAB, 10400, 11155111, 600);
+        receiver.handleAlert(address(0), pairAB, 10400, 11155111);
 
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10400);
         AlertReceiver.Alert memory alert = receiver.getAlert(pairAB);
         assertEq(uint256(alert.sourceRatio), 10400);
         assertEq(uint256(alert.sourceChainId), 11155111);
-        assertEq(uint256(alert.ttl), 600);
     }
 
     function test_alertReceiver_clearAlert() public {
         vm.prank(callbackSender);
-        receiver.handleAlert(address(0), pairAB, 10800, 84532, 600);
+        receiver.handleAlert(address(0), pairAB, 10800, 84532);
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10800);
 
-        // Clear by sending ratio <= RATIO_PRECISION
+        // Clear by sending ratio <= CLEAR_THRESHOLD
         vm.prank(callbackSender);
-        receiver.handleAlert(address(0), pairAB, 10000, 84532, 0);
+        receiver.handleAlert(address(0), pairAB, 10000, 84532);
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 0);
     }
 
-    function test_alertReceiver_ttlExpiry() public {
+    function test_alertReceiver_persistsUntilCleared() public {
         vm.prank(callbackSender);
-        receiver.handleAlert(address(0), pairAB, 10400, 11155111, 300);
+        receiver.handleAlert(address(0), pairAB, 10400, 11155111);
 
-        // Before expiry
+        // Alert persists even after long time
+        vm.warp(block.timestamp + 86400); // 1 day
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10400);
 
-        // Warp past TTL
-        vm.warp(block.timestamp + 301);
+        // Only clears when recovery ratio is sent
+        vm.prank(callbackSender);
+        receiver.handleAlert(address(0), pairAB, 10000, 11155111);
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 0);
     }
 
     function test_alertReceiver_accessControl() public {
         vm.prank(address(0xDEAD));
         vm.expectRevert("Authorized sender only");
-        receiver.handleAlert(address(0), pairAB, 10200, 1301, 600);
+        receiver.handleAlert(address(0), pairAB, 10200, 1301);
     }
 
     function test_alertReceiver_multiplePairs() public {
@@ -66,8 +67,8 @@ contract AlertReceiverTest is Test {
         receiver.registerPair(pairAC, tokenA, tokenC);
 
         vm.startPrank(callbackSender);
-        receiver.handleAlert(address(0), pairAB, 10150, 1301, 600);
-        receiver.handleAlert(address(0), pairAC, 10800, 84532, 600);
+        receiver.handleAlert(address(0), pairAB, 10150, 1301);
+        receiver.handleAlert(address(0), pairAC, 10800, 84532);
         vm.stopPrank();
 
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10150);
@@ -77,17 +78,16 @@ contract AlertReceiverTest is Test {
     function test_alertReceiver_overwrite() public {
         vm.startPrank(callbackSender);
 
-        receiver.handleAlert(address(0), pairAB, 10150, 1301, 600);
+        receiver.handleAlert(address(0), pairAB, 10150, 1301);
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10150);
 
         // Overwrite with higher ratio
-        receiver.handleAlert(address(0), pairAB, 10800, 11155111, 300);
+        receiver.handleAlert(address(0), pairAB, 10800, 11155111);
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10800);
 
         AlertReceiver.Alert memory alert = receiver.getAlert(pairAB);
         assertEq(uint256(alert.sourceChainId), 11155111);
         assertEq(uint256(alert.sourceRatio), 10800);
-        assertEq(uint256(alert.ttl), 300);
 
         vm.stopPrank();
     }
@@ -99,7 +99,7 @@ contract AlertReceiverTest is Test {
     function test_alertReceiver_unregisteredPairReturnsZero() public {
         // Set an alert on pairAB
         vm.prank(callbackSender);
-        receiver.handleAlert(address(0), pairAB, 10400, 11155111, 600);
+        receiver.handleAlert(address(0), pairAB, 10400, 11155111);
 
         // Query with unregistered pair (tokenB, tokenC) -- should return 0
         assertEq(receiver.getCrossChainRatio(tokenB, tokenC), 0);
@@ -111,7 +111,7 @@ contract AlertReceiverTest is Test {
 
         // Set alert on pairAC
         vm.prank(callbackSender);
-        receiver.handleAlert(address(0), pairAC, 10500, 84532, 600);
+        receiver.handleAlert(address(0), pairAC, 10500, 84532);
 
         // Lookup via token addresses works
         assertEq(receiver.getCrossChainRatio(tokenA, tokenC), 10500);
@@ -125,7 +125,7 @@ contract AlertReceiverTest is Test {
 
         // Set alert only on pairAB
         vm.prank(callbackSender);
-        receiver.handleAlert(address(0), pairAB, 10500, 11155111, 600);
+        receiver.handleAlert(address(0), pairAB, 10500, 11155111);
 
         // pairAB should have alert
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10500);
@@ -151,7 +151,7 @@ contract AlertReceiverTest is Test {
 
     function test_alertReceiver_getAlertForTokens() public {
         vm.prank(callbackSender);
-        receiver.handleAlert(address(0), pairAB, 10400, 11155111, 600);
+        receiver.handleAlert(address(0), pairAB, 10400, 11155111);
 
         AlertReceiver.Alert memory alert = receiver.getAlertForTokens(tokenA, tokenB);
         assertEq(uint256(alert.sourceRatio), 10400);
@@ -161,21 +161,63 @@ contract AlertReceiverTest is Test {
     function test_alertReceiver_nearBalancedClearsAlert() public {
         // Set a real alert
         vm.prank(callbackSender);
-        receiver.handleAlert(address(0), pairAB, 10400, 11155111, 600);
+        receiver.handleAlert(address(0), pairAB, 10400, 11155111);
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10400);
 
         // Ratio 10001 is within CLEAR_THRESHOLD (10050) -- should clear, not store
         vm.prank(callbackSender);
-        receiver.handleAlert(address(0), pairAB, 10001, 11155111, 600);
+        receiver.handleAlert(address(0), pairAB, 10001, 11155111);
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 0);
     }
 
     function test_alertReceiver_tokenOrderIndependent() public {
         vm.prank(callbackSender);
-        receiver.handleAlert(address(0), pairAB, 10400, 11155111, 600);
+        receiver.handleAlert(address(0), pairAB, 10400, 11155111);
 
         // Both orderings should return same ratio
         assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10400);
         assertEq(receiver.getCrossChainRatio(tokenB, tokenA), 10400);
+    }
+
+    function test_alertReceiver_handleAlertRejectsZeroPairId() public {
+        vm.prank(callbackSender);
+        vm.expectRevert("Invalid pairId");
+        receiver.handleAlert(address(0), bytes32(0), 10400, 11155111);
+    }
+
+    function test_alertReceiver_handleAlertRejectsRatioOverflow() public {
+        vm.prank(callbackSender);
+        vm.expectRevert("Ratio overflow");
+        receiver.handleAlert(address(0), pairAB, uint256(type(uint128).max) + 1, 11155111);
+    }
+
+    function test_alertReceiver_registerPairRejectsZeroPairId() public {
+        vm.expectRevert("Invalid pairId");
+        receiver.registerPair(bytes32(0), tokenA, tokenB);
+    }
+
+    function test_alertReceiver_ownerClearAlert() public {
+        // Set an alert
+        vm.prank(callbackSender);
+        receiver.handleAlert(address(0), pairAB, 10500, 11155111);
+        assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 10500);
+
+        // Owner clears it manually
+        receiver.clearAlert(pairAB);
+        assertEq(receiver.getCrossChainRatio(tokenA, tokenB), 0);
+    }
+
+    function test_alertReceiver_ownerClearAlertOnlyOwner() public {
+        vm.prank(callbackSender);
+        receiver.handleAlert(address(0), pairAB, 10500, 11155111);
+
+        vm.prank(address(0xDEAD));
+        vm.expectRevert("Only owner");
+        receiver.clearAlert(pairAB);
+    }
+
+    function test_alertReceiver_ownerClearAlertRequiresActive() public {
+        vm.expectRevert("No active alert");
+        receiver.clearAlert(pairAB);
     }
 }
