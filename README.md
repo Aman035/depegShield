@@ -65,8 +65,21 @@ The monitor can attach to any Uniswap V2, V3, or V4 pool on any supported chain.
 ## Hook Flow
 
 <p align="center">
-  <img src="assets/hook_flow.svg" alt="Hook flow: swap initiated, beforeSwap reads pool state, computes reserves and ratio, checks cross-chain alerts, branches on swap direction (rebalancing = 0bp, worsening = FeeCurve), returns fee override, afterSwap emits event" width="400" />
+  <img src="assets/hook_flow.svg" alt="Hook flow: beforeSwap derives reserves and ratio from pool state, branches on swap direction (rebalancing = 0bp, worsening = FeeCurve + cross-chain floor), returns fee override, afterSwap emits event" width="400" />
 </p>
+
+| Step | What happens | Code |
+| ---- | ------------ | ---- |
+| `beforeSwap()` | Entry point. Calls `_computeSwapFee()`, stores fee in transient storage, returns with `OVERRIDE_FEE_FLAG` | [`DepegShieldHook.sol`](contracts/src/DepegShieldHook.sol) |
+| Derive reserves | Reads `sqrtPriceX96` + `liquidity` from PoolManager, computes virtual reserves and imbalance ratio. No oracles | [`DepegShieldHook.sol`](contracts/src/DepegShieldHook.sol) |
+| Direction check | Determines if the swap worsens or rebalances the imbalance based on which token is in excess | [`DepegShieldHook.sol`](contracts/src/DepegShieldHook.sol) |
+| Fee curve | 5-zone adaptive curve (1bp to 50% cap). Rebalancing swaps pay 0bp | [`FeeCurve.sol`](contracts/src/FeeCurve.sol) |
+| Cross-chain floor | For worsening swaps only: `max(localFee, FeeCurve(crossChainRatio))`. Reads alerts from AlertReceiver | [`AlertReceiver.sol`](contracts/src/AlertReceiver.sol) |
+| `afterSwap()` | Reads fee from transient storage, emits `SwapFeeApplied` with post-swap state | [`DepegShieldHook.sol`](contracts/src/DepegShieldHook.sol) |
+
+**Reactive Network integration:** [`ReactiveMonitor.sol`](contracts/src/reactive/ReactiveMonitor.sol) ([deployed on Reactive Lasna](https://lasna.reactscan.net/address/0xf30180b9cec36f5a3762332c0f102fe8c024d64e/contract/0xfa5eeb94A58e5E83451C90E0915705E2d3a8EBA1)) subscribes to V2/V3/V4 swap events across chains. When a swap is detected, it decodes pool reserves, computes the imbalance ratio, and emits a cross-chain callback to [`AlertReceiver.sol`](contracts/src/AlertReceiver.sol) on each destination chain. The AlertReceiver stores the ratio per token pair. On the next swap, `DepegShieldHook._computeSwapFee()` reads this stored ratio and applies it as a fee floor: `max(localFee, FeeCurve(crossChainRatio))`. Config in [`05_DeployReactive.s.sol`](contracts/script/05_DeployReactive.s.sol).
+
+**Unichain integration:** Hook deployed on Unichain Sepolia ([`DepegShieldHook`](https://sepolia.uniscan.xyz/address/0x05e5c38f6ca3e76c30145eb73f1128B7749140C0), [`AlertReceiver`](https://sepolia.uniscan.xyz/address/0xfe8BA3Fa183C98d637fd549f579670b3cB63b199)). Pool created via [`04_CreatePool.s.sol`](contracts/script/04_CreatePool.s.sol). Deploy scripts: [`03_DeployHook.s.sol`](contracts/script/03_DeployHook.s.sol).
 
 ---
 
