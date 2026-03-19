@@ -104,8 +104,41 @@ export default function LandingPage() {
       </section>
 
 
-      {/* 3. The Solution */}
+      {/* 3. The Bigger Problem */}
       <section className="relative z-10">
+        <div className="w-full mx-auto max-w-5xl px-6">
+          <SectionLabel>The Bigger Problem</SectionLabel>
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2 mb-4">
+            Depegs don&apos;t stay on one chain
+          </h2>
+          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-2xl mb-10">
+            When a stablecoin depegs on one chain, the same token trades on dozens of others. Arbitrageurs exploit the lag, draining stablecoin pool LP value on other chains before local pools show stress. Per-chain hooks are blind to this.
+          </p>
+
+          <div>
+            <ContagionVisual />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-10">
+            <div>
+              <h3 className="text-base font-medium mb-1.5 tracking-tight text-[var(--text)]">Contagion lag</h3>
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                Minutes between depeg on one chain and arbitrageurs draining others. By the time local pools react, the damage is done.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-base font-medium mb-1.5 tracking-tight text-[var(--text)]">Invisible to local hooks</h3>
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                Per-chain hooks only see their own pool state. A crisis on Ethereum is invisible to the same pool on Arbitrum or Base.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      {/* 4. The Solution */}
+      <section className="relative z-10 bg-[var(--bg-raised)]/40">
         <div className="w-full mx-auto max-w-5xl px-6">
           <SectionLabel>The Solution</SectionLabel>
           <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2 mb-4">
@@ -143,39 +176,6 @@ export default function LandingPage() {
                 <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{item.desc}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-
-      {/* 4. The Bigger Problem */}
-      <section className="relative z-10 bg-[var(--bg-raised)]/40">
-        <div className="w-full mx-auto max-w-5xl px-6">
-          <SectionLabel>The Bigger Problem</SectionLabel>
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] mt-2 mb-4">
-            Depegs don&apos;t stay on one chain
-          </h2>
-          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-2xl mb-10">
-            When a stablecoin depegs on one chain, the same token trades on dozens of others. Arbitrageurs exploit the lag, draining stablecoin pool LP value on other chains before local pools show stress. Per-chain hooks are blind to this.
-          </p>
-
-          <div>
-            <ContagionVisual />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-10">
-            <div>
-              <h3 className="text-base font-medium mb-1.5 tracking-tight text-[var(--text)]">Contagion lag</h3>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                Minutes between depeg on one chain and arbitrageurs draining others. By the time local pools react, the damage is done.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-base font-medium mb-1.5 tracking-tight text-[var(--text)]">Invisible to local hooks</h3>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                Per-chain hooks only see their own pool state. A crisis on Ethereum is invisible to the same pool on Arbitrum or Base.
-              </p>
-            </div>
           </div>
         </div>
       </section>
