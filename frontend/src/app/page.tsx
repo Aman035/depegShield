@@ -37,7 +37,7 @@ export default function LandingPage() {
               Depeg<span className="text-[var(--green)]">Shield</span>
             </h1>
             <p className="text-xl md:text-2xl font-light tracking-[-0.01em] text-[var(--text-secondary)] leading-snug mt-6 max-w-lg">
-              The first Uniswap v4 hook that shields LPs across every chain
+              Risk-responsive fees for stablecoin pools, across every chain
             </p>
             <div className="mt-8 flex flex-wrap gap-3 max-w-lg">
               <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--bg-raised)] border border-[var(--border)] text-[13px] text-[var(--text-secondary)]">
@@ -79,7 +79,7 @@ export default function LandingPage() {
             Flat fees fail when it matters most
           </h2>
           <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-2xl mb-10">
-            Standard pools charge the same 1bp fee whether the pool is balanced or in a death spiral. LPs absorb millions in toxic flow for pennies. No directional awareness means zero incentive to rebalance.
+            Stablecoin pools charge the same 1bp fee whether the pool is balanced or in a death spiral. LPs absorb millions in toxic flow for pennies. No directional awareness means zero incentive to rebalance.
           </p>
 
           <div>
@@ -112,7 +112,7 @@ export default function LandingPage() {
             Directional fees that adapt in real time
           </h2>
           <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-2xl mb-10">
-            DepegShield reads pool state on every swap. Fees escalate for panic sellers and drop to zero for rebalancers. Watch the same pool scenario with the hook active.
+            DepegShield makes stablecoin pool fees responsive to risk. Fees escalate for panic sellers and drop to zero for rebalancers. Watch the same pool scenario with the hook active.
           </p>
 
           <div>
@@ -156,7 +156,7 @@ export default function LandingPage() {
             Depegs don&apos;t stay on one chain
           </h2>
           <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-2xl mb-10">
-            When a stablecoin depegs on one chain, the same token trades on dozens of others. Arbitrageurs exploit the lag, draining LP value on other chains before local pools show stress. Per-chain hooks are blind to this.
+            When a stablecoin depegs on one chain, the same token trades on dozens of others. Arbitrageurs exploit the lag, draining stablecoin pool LP value on other chains before local pools show stress. Per-chain hooks are blind to this.
           </p>
 
           <div>
